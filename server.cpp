@@ -86,6 +86,14 @@ int main()
 	
 	int clientfd = accept(serverFD, NULL, NULL);
 	std::cout << "Connected to client\n";
+	char buffer[2] {0};
+	int res = recv(clientfd, buffer, sizeof(buffer), 0);
+	std::cout << "Received " << res << " bytes." << std::endl;
+	std::cout << "Received message: " << buffer << std::endl;
+	res = recv(clientfd, buffer, sizeof(buffer), 0);
+	std::cout << "Received " << res << " bytes." << std::endl;
+	std::cout << "Received message: " << buffer << std::endl;
+	
 
 	freeaddrinfo(result);
 	close(serverFD);

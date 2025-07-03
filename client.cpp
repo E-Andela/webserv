@@ -50,4 +50,10 @@ int main(int argc, char *argv[])
 		std::cerr << "Failed to connect" << std::endl;
 		return (EXIT_FAILURE);
 	}
+	usleep(5000000);
+	close(sockfd);
+	freeaddrinfo(result);
+	usleep(5000000);
+	std::cout << "Client finished" << std::endl;
+	return EXIT_SUCCESS;
 }
