@@ -1,6 +1,7 @@
 #pragma once
-#include "Config.hpp"
 
+#include "AST.hpp"
+#include <string>
 class ConfigValidator {
 public:
     static void validate(const Config& config);

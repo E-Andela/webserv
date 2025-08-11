@@ -112,3 +112,52 @@ empty allow_methods
 duplicate methods
 whitespace formatting
 
+
+
+
+## Config grammar:
+
+config        ::= { block } ;
+
+block         ::= identifier { args } "{" { directive | block } "}" ;
+
+directive     ::= identifier { args } ";" ;
+
+args          ::= identifier { identifier } ;
+
+identifier    ::= string (any word, number, or path) ;
+
+
+
+
+## Example AST:
+
+
+
+server {
+    listen 8080;
+    server_name localhost;
+
+    location / {
+        methods GET POST;
+        root /var/www/html;
+    }
+
+    location /upload {
+        methods POST;
+        upload_path /var/www/uploads;
+    }
+}
+
+
+
+Config
+└── Block: "server"
+    ├── Directive: "listen" ["8080"]
+    ├── Directive: "server_name" ["localhost"]
+    ├── Block: "location" ["/"]
+    │   ├── Directive: "methods" ["GET", "POST"]
+    │   └── Directive: "root" ["/var/www/html"]
+    └── Block: "location" ["/upload"]
+        ├── Directive: "methods" ["POST"]
+        └── Directive: "upload_path" ["/var/www/uploads"]

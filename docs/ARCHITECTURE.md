@@ -5,7 +5,7 @@ This document outlines the major entities, classes, and their relationships
 ---
 
 ## Core Architecture
-
+<!-- 
 ### Class: `Server`
 Manages a single server instance and its socket.
 
@@ -59,32 +59,97 @@ HttpResponse
 - headers_:
 - body_:
 + build():
-+ getStatus():
++ getStatus(): -->
+
+---
 
 ## Configuration
 
 
-### Class `Config`
-stores parsed config
+### Class `Tokenizer`
+Breaks down configuration file into tokens.
+
+Tokenizer:
+- input: `std::istream&`
+- currentChar: `char`
+
++ `next(); -> TokenType`
++ `peek(); -> TokenType`
++ `advance();`
++ `skipWhiteSpace();`
+
+### Struct: `Directive`
+Represents a single directive line in the config.
+
+Directive
+- name: `std::string'
+- args: `std::vector<std::string>`
+
+### Struct `Block`
+Represents a block with nested directives or blocks.
+
+Block
+- name: `std::string`
+- args: `std::vector<std::string>`
+- directives: `std::vector<Directive>`
+- children: `std::vector<Block>`
+
+### Struct `Config`
+top AST node containing all parsed blocks.
 
 Config
-- lines_: vector<string>
-+ addLines(): void
-+ getLines(): vector
+- blocks: `std::vector<Block>`
 
 
 ### Class `ConfigParser`
-parses configuration files
+parses the configuration file into a `Config` AST.
 
 ConfigParser
-+ parse(path): Config
++ `parse(path: string) -> Config`
++ `parseBlock(...) -> Block`
+
+### Class `ConfigValidator`
+Validates the AST and prints warnings/errors for faulty configs.
+
+ConfigValidator
++ `validate(Config&) -> void`
+
+
+### Class `ConfigMapper`
+Maps the validated `Config` AST into real config objects.
+
+ConfigMapper:
++ `map(Config&) -> std::vector<ServerConfig>`
+
 
 ### struct `ServerConfig`
+Represents a server config.
+
+ServerConfig:
+- port: `int`
+- serverName: `std::string`
+- root: `std::string`
+- index: `std::string`
+- bodyLimit: `std::string`
+- errorPages: `std::map<int, std::string>`
+- routes: `std::vector<RouteConfig>`
+
 
 ### struct `RouteConfig`
+Represents configuration for a `location` block.
 
+RouteConfig:
+- path: `std::string`
+- methods: `std::vector<std::string>`
+- uploadPath: `std::string`
+- cgiPath: `std::string`
+- cgiExtension: `std::string`
+- redirectTo: `std::string`
 
-## Routing and Handlers
+### Class `ConfigError`
+custom error for config subsystem
+
+<!-- ## Routing and Handlers
 
 ### Class: `Router`
 
@@ -95,7 +160,7 @@ base class for all route behavior
 
 #### Class `StaticFileHandler`
 #### Class `CgiHandler`
-#### Class `UploadHandler`
+#### Class `UploadHandler` -->
 
 
 ## Utilities
@@ -107,11 +172,11 @@ Logger
 + debug(): void
 
 
-### Class `ErorrPages`
+<!-- ### Class `ErorrPages`
 ErrorPages
-+ get(status): string
++ get(status): string -->
 ---
-
+<!-- 
 ## Summary
 
 | Category         | Classes                                     |
@@ -122,4 +187,4 @@ ErrorPages
 | Routing          | `Router`, `IHandler`, + Handlers            |
 | Utilities        | `Logger`, `ErrorPages`         |
 
----
+--- -->
