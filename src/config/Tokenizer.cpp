@@ -91,6 +91,14 @@ Token Tokenizer::next() {
     char invalid = currentChar_;
     advance();
     return {TokenType::INVALID, std::string(1, invalid)};
+    /*
+    if (!std::isalnum(currentChar_) && !std::ispunct(currentChar_)) {
+    char invalid = currentChar_;
+    advance();
+    throw ConfigParseError(std::string("Invalid character in config: '") + invalid + "'");
+}
+
+    */
 }
 
 // does not advance the input stream

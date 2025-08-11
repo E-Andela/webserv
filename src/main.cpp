@@ -33,3 +33,24 @@ int main(int argc, char* argv[])
     }
     return 0;
 }
+
+
+/*
+TODO:
+Use ConfigError in different places of the code
+decide what is warning what is error
+remove all std::cerr 
+refactor configparser and configmapper
+make sure token STRING is being used where it needs to be used
+for fatal validation errors use configerror: (swwitcg real errors to exceptions) - warnings as logs
+    missing mandatory directives
+    invalid ports
+    invalid http methods
+    problems with error_pages
+
+
+Tokenizer → Parser → Validator → Mapper → Wrapper → main
+(throw) (throw) (throw) (throw) (catch/log) (catch/exit)
+
+
+*/

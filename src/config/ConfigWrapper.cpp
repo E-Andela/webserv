@@ -24,3 +24,14 @@ void runConfigLogic(const std::string& configPath) {
     std::vector<ServerConfig> servers = ConfigMapper::map(config);
     printMappedConfig(servers);
 }
+/*
+try {
+    Config config = ConfigParser::parse(configPath);
+    ConfigValidator::validate(config); 
+    ...
+} catch (const ConfigError& e) {
+    Logger::log(LOG_ERROR, std::string("Configuration failed: ") + e.what());
+    throw; // propagate so main() can exit
+}
+
+*/

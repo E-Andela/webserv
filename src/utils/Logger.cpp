@@ -18,6 +18,7 @@ std::string Logger::levelToString(LogLevel level) {
         case LOG_INFO: return "INFO";
         case LOG_ERROR: return "ERROR";
         case LOG_DEBUG: return "DEBUG";
+        case LOG_WARNING: return "WARNING";
         default: return "UNKNOWN";
     }
 }
@@ -32,3 +33,4 @@ void Logger::log(LogLevel level, const std::string& msg) {
               << "[" << levelToString(level) << " ]"
               << msg << std::endl;
 }
+

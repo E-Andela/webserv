@@ -44,8 +44,21 @@ static RouteConfig mapRoute(const Block& block) {
     return route;
 }
 
+// define mandatory fields
 static ServerConfig mapServer(const Block& block) {
     ServerConfig server;
+    /*
+        std::string portStr = getDirectiveArg(block, "listen");
+    if (portStr.empty()) {
+        throw ConfigMappingError("Server block missing 'listen' directive");
+    }
+    try {
+        server.port = std::stoi(portStr);
+    } catch (const std::exception&) {
+        throw ConfigMappingError("Invalid port: '" + portStr + "'");
+    }
+
+    */
     server.port = std::stoi(getDirectiveArg(block, "listen"));
     server.serverName = getDirectiveArg(block, "server_name");
     server.root = getDirectiveArg(block, "root");
