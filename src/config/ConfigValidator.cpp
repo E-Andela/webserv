@@ -1,6 +1,6 @@
-#include "ConfigValidator.hpp"
-#include "Logger.hpp"
-#include "ConfigError.hpp"
+#include "Config/ConfigValidator.hpp"
+#include "Config/Logger.hpp"
+#include "Config/ConfigError.hpp"
 #include <iostream>
 #include <set>
 #include <algorithm>

@@ -1,6 +1,6 @@
-#include "ConfigParser.hpp"
-#include "Tokenizer.hpp"
-#include "ConfigError.hpp"
+#include "Config/ConfigParser.hpp"
+#include "Config/Tokenizer.hpp"
+#include "Config/ConfigError.hpp"
 #include <fstream>
 #include <iostream>
 #include <string_view>

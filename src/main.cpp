@@ -1,11 +1,11 @@
-#include "ConfigParser.hpp"
-#include "Logger.hpp"
-#include "DebugPrint.hpp"
-#include "ConfigValidator.hpp"
-#include "ConfigMapper.hpp"
-#include "ServerConfig.hpp"
-#include "ConfigError.hpp"
-#include "ConfigWrapper.hpp"
+#include "Config/ConfigParser.hpp"
+#include "Config/Logger.hpp"
+#include "Config/DebugPrint.hpp"
+#include "Config/ConfigValidator.hpp"
+#include "Config/ConfigMapper.hpp"
+#include "Config/ServerConfig.hpp"
+#include "Config/ConfigError.hpp"
+#include "Config/ConfigWrapper.hpp"
 #include <iostream>
 
 

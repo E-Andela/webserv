@@ -1,8 +1,9 @@
-#include "Logger.hpp"
-#include "ConfigParser.hpp"
-#include "ConfigValidator.hpp"
-#include "DebugPrint.hpp"
-#include "ConfigMapper.hpp"
+#include "Config/Logger.hpp"
+#include "Config/ConfigParser.hpp"
+#include "Config/ConfigValidator.hpp"
+#include "Config/DebugPrint.hpp"
+#include "Config/ConfigMapper.hpp"
+#include "WebServer/WebServer.hpp"
 
 void runConfigLogic(const std::string& configPath) {
 
@@ -13,14 +14,18 @@ void runConfigLogic(const std::string& configPath) {
     ConfigValidator::validate(config); 
 
     // Print raw config back
-    for (const Block& block : config.blocks) {
-        printBlock(block);
-    }
+    // for (const Block& block : config.blocks) {
+    //     // printBlock(block);
+    // }
 
     // Print AST
-    printASTTree(config);
+    // printASTTree(config);
     
     // Map to server config
     std::vector<ServerConfig> servers = ConfigMapper::map(config);
-    printMappedConfig(servers);
+	WebServer server(servers);
+	server.initSockets();
+	server.initPollManager();
+	server.run();
+    // printMappedConfig(servers);
 }

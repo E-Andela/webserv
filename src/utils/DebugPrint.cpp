@@ -1,4 +1,4 @@
-#include "DebugPrint.hpp"
+#include "Config/DebugPrint.hpp"
 #include <iostream>
 #include <string>
 
