@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/08/29 18:49:16 by diwang        #+#    #+#                 */
-/*   Updated: 2025/09/07 15:20:50 by diwang        ########   odam.nl         */
+/*   Updated: 2025/09/07 17:12:27 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,9 +15,17 @@
 #include <fstream>
 #include <sstream>
 #include <map>
-#include <string.h>
+#include <algorithm>
+#include <string>
+#include <cstring>
+#include <cctype>
+#include <cstdio>
+
+
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <errno.h>
 
 class ParseHTTP 
 {
