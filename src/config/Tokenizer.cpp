@@ -40,7 +40,27 @@ Token Tokenizer::readQuotedString() {
     while (currentChar_ != '"' && !input_.eof()) {
         if (currentChar_ == '\\') { // support escaping
             advance();
-            if (input_.eof()) break;
+            if (input_.eof())
+                break;
+
+            switch (currentChar_) {
+                case '"':
+                    value += '"';
+                    advance();
+                    break ;
+                case '\\':
+                    value += '\\';
+                    advance();
+                    break ;
+                // place for more supported escapes here
+                default:
+                    // things to keep literally
+                    value += '\\';
+                    value += currentChar_;
+                    advance();
+                    break ;
+            }
+            continue;
         }
         value += currentChar_;
         advance();
@@ -119,3 +139,4 @@ Token Tokenizer::peek() {
 // error checking - decide on what is fatal what's a warning
 // more punctuatuon checks
 // escape support for quotes ?
+// real escape characters  /" and // - preserve unknown escapes

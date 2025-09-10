@@ -35,46 +35,57 @@ static const std::set<std::string> serverDirectives = {
 };
 
 
-/* valid methods */
+/* valid HTTP methods */
 static const std::set<std::string> validMethods = { "GET", "POST", "DELETE" };
 
 /*
 validate presense of mandatory fields
-TODO: define mandatory fields in docs
 */
 static void validateServerDirective(const Directive& d, bool& hasListen, bool& hasServerName) {
 
     // checks directive's name
     if (serverDirectives.find(d.name) == serverDirectives.end()) {
-        Logger::log(LOG_ERROR, "Warning: unknown directive '" + d.name + "' in server block.");
+        Logger::log(LOG_ERROR, "Unknown directive '" + d.name + "' in server block."); // error or warning?
         return;
     }
 
     if (d.name == "listen") {
         hasListen = true;
         if (d.args.empty())
-            Logger::log(LOG_ERROR, "'listen' directive missing argument");
-        else {
-            int port;
-            try {
-                if (!parse_port(d.args[0], port))
-                    Logger::log(LOG_ERROR, "Invalid port in 'listen'");
-            } catch (const std::exception& e) {
-                Logger::log(LOG_ERROR, "Failed to parse port: " + std::string(e.what()));
-            }
-        }
+            throw ConfigValidationError("'listen' directive missing argument.");
+        if (d.args.size() != 1) {
+        // in case of missing ;
+        //std::string hint;
+        //if (d.args.size() >= 2) {
+            //hint = " (did you forget ';' before '" + d.args[1] + "'?)";
+        //}
+        throw ConfigValidationError(
+            "'listen' expects exactly one argument; got " +
+            std::to_string(d.args.size()) //+ hint
+        );
+    }
+        int port;
+        if (!parse_port(d.args[0], port))
+            throw ConfigValidationError("Invalid port in 'listen'.");
     }
     
     else if (d.name == "server_name") {
         hasServerName = true;
         if (d.args.empty())
             Logger::log(LOG_WARNING, "'server_name' is empty.");
-    } else if ((d.name == "root" || d.name == "index") && d.args.empty())
-        Logger::log(LOG_ERROR, "No value for: " + d.name +".");
-    else if (d.name == "error_page") {
-        if (d.args.size() != 2 || !is_digit_string(d.args[0]))
-            Logger::log(LOG_ERROR, "'error_page' must be: error_page <code> <path>;");
+
+    } else if ((d.name == "root" || d.name == "index") && d.args.empty()) {
+        //Logger::log(LOG_ERROR, "No value for: " + d.name +".");
+        throw ConfigValidationError("'" + d.name + "'requires a value.");
     }
+
+    else if (d.name == "error_page") {
+        if (d.args.size() != 2 || !is_digit_string(d.args[0])) {
+            //Logger::log(LOG_ERROR, "'error_page' must be: error_page <code> <path>;");
+            throw ConfigValidationError("expected 'error_page <code> <path>'");
+        }
+    }
+    // client_max_body_size
     // validate more 
 }
 
@@ -85,32 +96,39 @@ static const std::set<std::string> locationDirectives = {
     "cgi_path", "cgi_extension"
 };
 
-static void validateLocationDirective(const Directive& d) {
+static void validateLocationDirective(const Directive& d, const std::string& locationPath) {
     if (locationDirectives.find(d.name) == locationDirectives.end()) {
-        Logger::log(LOG_WARNING, "Unknown directive '" + d.name + "'."); // add locationpath for better logging
-        return;
+        Logger::log(LOG_WARNING, "Unknown directive '" + d.name + "in location '" + locationPath + "'.");
+        return ;
     }
 
-    if ((d.name == "upload_path" || d.name == "cgi_path" || d.name == "cgi_extension") && d.args.empty()) {
-        Logger::log(LOG_ERROR, "'" + d.name + "' requires a value.");
+    if (d.name == "upload_path" || d.name == "cgi_path" || d.name == "cgi_extension") {
+        if (d.args.empty()) {
+            //Logger::log(LOG_ERROR, "'" + d.name + "' requires a value.");
+            throw ConfigValidationError("'" + d.name + "' requires a value in location '" + locationPath + "'.");
+        }
     }
 
     if (d.name == "return") {
         if (d.args.empty()) {
-            Logger::log(LOG_ERROR, "'return' directive requires a status code in location '");
-        } else if (!is_digit_string(d.args[0])) {
-            Logger::log(LOG_ERROR, "'return' code must be numeric.");
+            //Logger::log(LOG_ERROR, "'return' directive requires a status code in location '");
+            throw ConfigValidationError("return no good in '" + locationPath + "'.");
+        } if (!is_digit_string(d.args[0])) {
+            //Logger::log(LOG_ERROR, "'return' code must be numeric.");
+            throw ConfigValidationError("return code must be numeric in location '" + locationPath + "'.");
+            // check non empty url if exists
         }
     }
 
     if (d.name == "methods") {
         if (d.args.empty()) {
-            Logger::log(LOG_ERROR, "'methods' must list at least one method.");
-        } else {
-            for (const std::string& m : d.args) {
-                if (validMethods.find(m) == validMethods.end()) {
-                    Logger::log(LOG_ERROR, "Invalid HTTP method '" + m + "'.");
-                }
+            //Logger::log(LOG_ERROR, "'methods' must list at least one method.");
+            throw ConfigValidationError("must at least list one method in '" + locationPath + "'.");
+        }
+        for (const std::string& m : d.args) {
+            if (validMethods.find(m) == validMethods.end()) {
+                //Logger::log(LOG_ERROR, "Invalid HTTP method '" + m + "'.");
+                throw ConfigValidationError("invalid http method '" + m + "'in location '" + locationPath + "'.");
             }
         }
     }
@@ -120,49 +138,70 @@ static void validateLocationDirective(const Directive& d) {
 
 static void validateLocationBlock(const Block& block) {
     if (block.args.empty()) {
-        Logger::log(LOG_ERROR, "location block missing path.");
-        return;
+        //Logger::log(LOG_ERROR, "location block missing path.");
+        throw ConfigValidationError("location block missing path.");
+        //return;
     }
+    const std::string& locationPath = block.args[0];
+    bool methodsSeen = false;
 
-    bool hasMethods = false;
     for (const Directive& d : block.directives) {
-        if (d.name == "methods") hasMethods = true;
-        validateLocationDirective(d);
+        if (d.name == "methods") {
+            if (methodsSeen)
+                Logger::log(LOG_WARNING, "Duplicate 'methods' in location '" + locationPath + "'. the first one will be used.");
+            methodsSeen = true;
+        }
+        validateLocationDirective(d, locationPath);
     }
 
-    if (!hasMethods) {
+    if (!methodsSeen) {
         Logger::log(LOG_WARNING,
-            "location '" + block.args[0] + "' has no 'methods' directive.");
+            "location '" + locationPath + "' has no 'methods' directive.");
     }
-       // Disallow nested blocks inside location (only directives expected)
+       // Disallow nested blocks inside location (only directives expected) - warn
     for (const Block& child : block.children) {
         Logger::log(LOG_WARNING,
-            "unknown nested block '" + child.name + "' inside location '" + block.args[0] + "'.");
+            "unknown nested block '" + child.name + "' inside location '" + locationPath + "'.");
     }
 }
 
+/*
+Server block validation
+*/
 static void validateServerBlock(const Block& block) {
     bool hasListen = false;
     bool hasServerName = false;
+    bool listenSeen = false;
+    bool serverNameSeen = false;
 
-    for (const Directive& d : block.directives)
+    for (const Directive& d : block.directives) {
+        if (d.name == "listen") {
+            if (listenSeen)
+                Logger::log(LOG_WARNING, "Duplicate 'listen' in server block. The first one will be used.");
+            listenSeen = true;
+        }
+        if (d.name == "server_name") {
+            if (serverNameSeen)
+                Logger::log(LOG_WARNING, "Duplicate 'server_name' in server block. The first one will be used.");
+            serverNameSeen = true;
+        }
         validateServerDirective(d, hasListen, hasServerName);
+    }
 
     if (!hasListen)
-        std::cerr << "Error: missing 'listen' directive.\n";
+        throw ConfigValidationError("Missing 'listen' directive in server block.");
     if (!hasServerName)
-        std::cerr << "Warning: missing 'server_name' directive.\n";
-
+        Logger::log(LOG_WARNING, "Missing 'server_name' directive in server block.");
     for (const Block& child : block.children) {
+        if (child.name == "server")
+            throw ConfigValidationError("Nested 'server' block is not allowed.");
         if (child.name != "location") {
-            std::cerr << "Warning: unknown block '" << child.name << "' inside server.\n";
+            Logger::log(LOG_WARNING, "Unknown block '" + child.name + "' inside server.");
             continue;
         }
         validateLocationBlock(child);
     }
 }
-
-
 
 void ConfigValidator::validate(const Config& config) {
     if (config.blocks.empty()) {
@@ -178,3 +217,5 @@ void ConfigValidator::validate(const Config& config) {
         validateServerBlock(block);
     }
 }
+
+
