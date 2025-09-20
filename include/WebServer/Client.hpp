@@ -2,18 +2,20 @@
 # define CLIENT_HPP
 
 # include <string>
+# include "Config/ServerConfig.hpp"
 
 class Client
 {
 private:
 	int _fd {};
+	ServerConfig* _config {};
 	std::string _request {};
 	std::string _response {};
 	bool	_requestComplete {false};
 	bool	_responseComplete {false};
 
 public:
-	Client(int fd);
+	Client(int fd, ServerConfig* config);
 	
 	int getFd() const;
 	bool getRequestComplete() const;

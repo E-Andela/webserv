@@ -73,3 +73,10 @@ void ListeningSocket::addConfig(ServerConfig* config)
 {
 	configs_.push_back(config);
 }
+
+ServerConfig* ListeningSocket::getConfig() const
+{
+	if (!configs_.empty())
+		return configs_[0];
+	return nullptr;
+}

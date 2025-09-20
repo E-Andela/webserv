@@ -34,7 +34,7 @@ void PollManager::acceptConnection(int fd)
 	{
 		return;
 	}
-	addClient(Client(clientFd));
+	addClient(Client(clientFd, _sockets[fd]->getConfig()));
 }
 
 void PollManager::readClient(int fd)

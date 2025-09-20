@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <iostream>
 
-Client::Client(int fd) : _fd {fd}, _requestComplete {false}, _responseComplete {false}
+Client::Client(int fd, ServerConfig* config) : _fd {fd}, _config {config}, _requestComplete {false}, _responseComplete {false}
 {
 
 }

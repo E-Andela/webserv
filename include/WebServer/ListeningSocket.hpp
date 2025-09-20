@@ -19,6 +19,7 @@ public:
 	void addConfig(ServerConfig* config);
 	int getFd() const;
 	int getPort() const;
+	ServerConfig* getConfig() const;
 };
 
 #endif
