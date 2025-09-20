@@ -83,6 +83,11 @@ void Client::reset()
 	_responseComplete = false;
 }
 
+ServerConfig* Client::getConfig() const
+{
+	return _config;
+}
+
 // std::string Client::request()
 // {
 // 	std::cout << "Client::request() " << std::endl;

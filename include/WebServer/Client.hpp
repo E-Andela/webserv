@@ -27,6 +27,7 @@ public:
 	void sendResponse();
 	int response(const std::string &response);
 	void reset();
+	ServerConfig* getConfig() const;
 
 
 };
