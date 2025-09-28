@@ -44,20 +44,40 @@ std::string Client::getRequest() const
  */
 void Client::buildRequest()
 {
-	std::cout << "Client::buildRequest() " << std::endl;
-	std::cout << "-------------------------------" << std::endl;
 	char buf[1024];
 	int res = recv(_fd, buf, sizeof(buf), 0);
 	if (res <= 0)
+	{
 		throw std::runtime_error("Client disconnected");
-	std::cout << "res: " << res << std::endl;
+	}
 
 	_request.append(buf, res);
-	size_t headerEnd = _request.find("\r\n\r\n");
-	if (headerEnd != std::string::npos)
-		_requestComplete = true;
 
-	std::cout << "-------------------------------" << std::endl;
+	if (!_headersComplete)
+	{
+		size_t headerEnd = _request.find("\r\n\r\n");
+		if (headerEnd != std::string::npos)
+			_headersComplete = true;
+		
+		std::string headers = _request.substr(0, headerEnd + 4);
+
+		size_t pos = headers.find("Content-Length:");
+		if (pos != std::string::npos)
+		{
+			_contentLength = std::stoi(headers.substr(pos + 15));
+		}
+	}
+
+	if (_headersComplete)
+	{
+		size_t headerEnd = _request.find("\r\n\r\n");
+		size_t bodySize = _request.size() - (headerEnd + 4);
+
+		if (bodySize >= _contentLength)
+		{
+			_requestComplete = true;
+		}
+	}
 }
 
 void Client::buildResponse()

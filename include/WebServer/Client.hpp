@@ -13,7 +13,10 @@ private:
 	std::string _response {};
 	bool	_requestComplete {false};
 	bool	_responseComplete {false};
+	bool	_headersComplete {false};
 	size_t _bytesSent {0};
+	size_t	_contentLength {0};
+	
 
 public:
 	Client(int fd, ServerConfig* config);
