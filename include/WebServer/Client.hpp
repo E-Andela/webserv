@@ -13,6 +13,7 @@ private:
 	std::string _response {};
 	bool	_requestComplete {false};
 	bool	_responseComplete {false};
+	size_t _bytesSent {0};
 
 public:
 	Client(int fd, ServerConfig* config);
@@ -20,7 +21,7 @@ public:
 	int getFd() const;
 	bool getRequestComplete() const;
 	bool getResponseComplete() const;
-	std::string& getRequest() const;
+	std::string getRequest() const;
 
 	void buildRequest();
 	void buildResponse();

@@ -24,6 +24,11 @@ bool Client::getResponseComplete() const
 	return _responseComplete;
 }
 
+std::string Client::getRequest() const
+{
+	return _request;
+}
+
 /**
  * @brief Reads data from the client socket and builds the HTTP request.
  *
@@ -43,7 +48,7 @@ void Client::buildRequest()
 	std::cout << "-------------------------------" << std::endl;
 	char buf[1024];
 	int res = recv(_fd, buf, sizeof(buf), 0);
-	if (res == 0)
+	if (res <= 0)
 		throw std::runtime_error("Client disconnected");
 	std::cout << "res: " << res << std::endl;
 
@@ -67,11 +72,20 @@ void Client::buildResponse()
 void Client::sendResponse()
 {
 	buildResponse();
-	std::cout << "Client::sendResponse() " << std::endl;
+	std::cout << "Client::sendResponse()" << std::endl;
 	std::cout << "-------------------------------" << std::endl;
-	int sent = send(_fd, _response.c_str(), _response.size(), 0);
-	std::cout << "sent: " << sent << std::endl;
-	_responseComplete = true;
+
+	size_t sent = send(_fd, _response.c_str() + _bytesSent, _response.size() - _bytesSent, 0);
+	if (sent <= 0)
+	{
+		throw std::runtime_error("Client disconnected");
+	}
+
+	_bytesSent += sent;
+
+	std::cout << "sent: " << sent << " bytes, total: " << _bytesSent << "/" << _response.size() << std::endl;
+	if (_bytesSent >= _response.size())
+		_responseComplete = true;
 	std::cout << "-------------------------------" << std::endl;
 }
 
@@ -81,6 +95,7 @@ void Client::reset()
 	_request.clear();
 	_requestComplete = false;
 	_responseComplete = false;
+	_bytesSent = 0;
 }
 
 ServerConfig* Client::getConfig() const

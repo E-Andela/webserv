@@ -46,7 +46,10 @@ void PollManager::readClient(int fd)
 		if (!client.getRequestComplete())
 			client.buildRequest();
 		if (client.getRequestComplete())
+		{
 			registerForWrite(fd);
+			std::cout << client.getRequest() << std::endl;
+		}
 	}
 }
 
@@ -122,11 +125,19 @@ void PollManager::run()
 					if (_clients.count(_pollfds[i].fd))
 					{
 						Client& client = *_clients[_pollfds[i].fd];
-						client.sendResponse();
-						if (client.getResponseComplete())
+						try
 						{
-							unregisterForWrite(_pollfds[i].fd);
-							client.reset();
+							client.sendResponse();
+							
+							if (client.getResponseComplete())
+							{
+								unregisterForWrite(_pollfds[i].fd);
+								client.reset();
+							}
+						}
+						catch(const std::exception& e)
+						{
+							removeClient(_pollfds[i].fd);
 						}
 					}
 				}
