@@ -115,6 +115,8 @@ void Client::reset()
 	_request.clear();
 	_requestComplete = false;
 	_responseComplete = false;
+	_headersComplete = false;
+	_contentLength = 0;
 	_bytesSent = 0;
 }
 
