@@ -14,6 +14,7 @@ private:
 	bool	_requestComplete {false};
 	bool	_responseComplete {false};
 	bool	_headersComplete {false};
+	bool	_responseBuilt {false};
 	size_t _bytesSent {0};
 	size_t	_contentLength {0};
 	

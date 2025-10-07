@@ -57,17 +57,17 @@ void Client::buildRequest()
 	{
 		size_t headerEnd = _request.find("\r\n\r\n");
 		if (headerEnd != std::string::npos)
-			_headersComplete = true;
-		
-		std::string headers = _request.substr(0, headerEnd + 4);
-
-		size_t pos = headers.find("Content-Length:");
-		if (pos != std::string::npos)
 		{
-			_contentLength = std::stoi(headers.substr(pos + 15));
+			_headersComplete = true;
+			std::string headers = _request.substr(0, headerEnd + 4);
+	
+			size_t pos = headers.find("Content-Length:");
+			if (pos != std::string::npos)
+			{
+				_contentLength = std::stoi(headers.substr(pos + 15));
+			}
 		}
 	}
-
 	if (_headersComplete)
 	{
 		size_t headerEnd = _request.find("\r\n\r\n");
@@ -87,26 +87,30 @@ void Client::buildResponse()
     _response += "Content-Type: text/plain\r\n";
     _response += "\r\n";
     _response += "Hello, world!";
+	_responseBuilt = true;
 }
 
 void Client::sendResponse()
 {
 	buildResponse();
-	std::cout << "Client::sendResponse()" << std::endl;
-	std::cout << "-------------------------------" << std::endl;
-
-	size_t sent = send(_fd, _response.c_str() + _bytesSent, _response.size() - _bytesSent, 0);
-	if (sent <= 0)
+	if (_responseBuilt)
 	{
-		throw std::runtime_error("Client disconnected");
+		std::cout << "Client::sendResponse()" << std::endl;
+		std::cout << "-------------------------------" << std::endl;
+
+		size_t sent = send(_fd, _response.c_str() + _bytesSent, _response.size() - _bytesSent, 0);
+		if (sent <= 0)
+		{
+			throw std::runtime_error("Client disconnected");
+		}
+
+		_bytesSent += sent;
+
+		std::cout << "sent: " << sent << " bytes, total: " << _bytesSent << "/" << _response.size() << std::endl;
+		if (_bytesSent >= _response.size())
+			_responseComplete = true;
+		std::cout << "-------------------------------" << std::endl;
 	}
-
-	_bytesSent += sent;
-
-	std::cout << "sent: " << sent << " bytes, total: " << _bytesSent << "/" << _response.size() << std::endl;
-	if (_bytesSent >= _response.size())
-		_responseComplete = true;
-	std::cout << "-------------------------------" << std::endl;
 }
 
 void Client::reset()
@@ -116,6 +120,7 @@ void Client::reset()
 	_requestComplete = false;
 	_responseComplete = false;
 	_headersComplete = false;
+	_responseBuilt = false;
 	_contentLength = 0;
 	_bytesSent = 0;
 }
