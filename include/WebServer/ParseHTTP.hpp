@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/08/29 18:49:16 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/08 16:29:57 by diwang        ########   odam.nl         */
+/*   Updated: 2025/10/09 14:25:58 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,9 @@
 #include <cerrno>
 #include <cstring>
 #include "Config/ServerConfig.hpp"
+#include <unistd.h>
+#include <sys/wait.h>
+#include <cstring>
 
 class Client;
 
@@ -35,6 +38,8 @@ class ParseHTTP
 		void setConfig(const ServerConfig* config);
 		std::string getResponse() const;
 		void parse_http_request();
+		// void handleCGI();
+		// std::string executeCGI(const std::string& script_path, const std::string& query_string);
 		
 	private:
 		Client* client;
