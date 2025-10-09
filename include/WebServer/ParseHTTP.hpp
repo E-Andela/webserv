@@ -1,0 +1,63 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        ::::::::            */
+/*   ParseHTTP.hpp                                      :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: diwang <diwang@student.codam.nl>             +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2025/08/29 18:49:16 by diwang        #+#    #+#                 */
+/*   Updated: 2025/10/08 16:29:57 by diwang        ########   odam.nl         */
+/*                                                                            */
+/* ************************************************************************** */
+
+#pragma once
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+#include <algorithm>
+#include <vector>
+#include <cstdio>
+#include <cerrno>
+#include <cstring>
+#include "Config/ServerConfig.hpp"
+
+class Client;
+
+class ParseHTTP
+{
+
+	public:
+		ParseHTTP();
+		~ParseHTTP();
+	
+		void setClient(Client* client);
+		void setConfig(const ServerConfig* config);
+		std::string getResponse() const;
+		void parse_http_request();
+		
+	private:
+		Client* client;
+		const ServerConfig* config;
+		const RouteConfig* currentRoute;
+		std::string response;
+		std::string method;
+		std::string path;
+		std::string version;
+
+		std::string getMimeType(const std::string& path);
+		std::string urlConverter(const std::string& str);
+		std::string sanitizePath(const std::string& path);
+		const RouteConfig* findRoute(const std::string& path);
+		bool methodInConfig(const std::string& method, const RouteConfig* route);
+
+		void handleGET();
+		void handlePOST(const std::string& http_request, size_t line_end);
+		void handleDELETE();
+		std::vector<std::string> parseMultipartBody(const std::string& body, const std::string& boundary, const std::string& uploadPath);
+		void send_error_response(int status_code, const std::string& message);
+
+};
+
+
+	//size_t parseBodyLimit(const std::string& limit);

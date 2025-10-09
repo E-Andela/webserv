@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload a File</title>
+	<style>
+		body
+		{	
+			background-color: #d166d3;
+		}
+	</style>
+</head>
+<body>
+    <h1>Upload a File</h1>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="myfile" />
+        <input type="submit" value="Upload" />
+    </form>
+</body>
+</html>
