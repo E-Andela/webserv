@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.codam.nl>             +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/10/05 13:51:24 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/09 14:25:48 by diwang        ########   odam.nl         */
+/*   Updated: 2025/10/09 14:30:31 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -409,16 +409,16 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 	}
 	
 	std::string responseBody = "<html><head><title>Upload Success</title></head><body>";
-	responseBody += "<h1>Upload Successful</h1>";
-	responseBody += "<p>Uploaded " + std::to_string(uploaded_files.size()) + " file(s):</p>";
-	responseBody += "<ul>";
+	responseBody = responseBody + "<h1>Upload Successful</h1>";
+	responseBody = responseBody + "<p>Uploaded " + std::to_string(uploaded_files.size()) + " file(s):</p>";
+	responseBody = responseBody + "<ul>";
 	for (const auto& filename : uploaded_files)
 	{
-		responseBody += "<li>" + filename + "</li>";
+		responseBody = responseBody + "<li>" + filename + "</li>";
 	}
-	responseBody += "</ul>";
-	responseBody += "<a href=\"/\">Back to home</a>";
-	responseBody += "</body></html>";
+	responseBody = responseBody + "</ul>";
+	responseBody = responseBody + "<a href=\"/\">Back to home</a>";
+	responseBody = responseBody + "</body></html>";
 	
 	response =
 		"HTTP/1.1 200 OK\r\n"

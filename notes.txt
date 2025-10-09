@@ -26,7 +26,7 @@ curl -v 127.0.0.1:8080
 
 -build out static webpages
 -stress test
--CGI   
+-CGI   , are you forms needed? if so, added to this part?
 
 Yasaman to test against EVAL Sheet
 Diane/Elroy to work on the CGI  
