@@ -3,10 +3,10 @@
 /*                                                        ::::::::            */
 /*   ParseHTTP.hpp                                      :+:    :+:            */
 /*                                                     +:+                    */
-/*   By: diwang <diwang@student.codam.nl>             +#+                     */
+/*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/08/29 18:49:16 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/09 14:25:58 by diwang        ########   odam.nl         */
+/*   Updated: 2025/10/26 13:29:58 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,48 +21,41 @@
 #include <cerrno>
 #include <cstring>
 #include "Config/ServerConfig.hpp"
-#include <unistd.h>
-#include <sys/wait.h>
-#include <cstring>
 
 class Client;
 
-class ParseHTTP
+class ParseHTTP 
 {
-
 	public:
 		ParseHTTP();
 		~ParseHTTP();
-	
-		void setClient(Client* client);
-		void setConfig(const ServerConfig* config);
+
+		void setClient(Client *client);
+		void setConfig(const ServerConfig *config);
 		std::string getResponse() const;
 		void parse_http_request();
-		// void handleCGI();
-		// std::string executeCGI(const std::string& script_path, const std::string& query_string);
-		
+
 	private:
-		Client* client;
-		const ServerConfig* config;
-		const RouteConfig* currentRoute;
+		Client *client;
+		const ServerConfig *config;
+		const RouteConfig *currentRoute;
 		std::string response;
 		std::string method;
 		std::string path;
 		std::string version;
 
-		std::string getMimeType(const std::string& path);
-		std::string urlConverter(const std::string& str);
-		std::string sanitizePath(const std::string& path);
-		const RouteConfig* findRoute(const std::string& path);
-		bool methodInConfig(const std::string& method, const RouteConfig* route);
+		std::string getMimeType(const std::string &path);
+		std::string urlConverter(const std::string &str); 
+		std::string sanitizePath(const std::string &path);
+		const RouteConfig *findRoute(const std::string &path);
+		bool methodInConfig(const std::string &method, const RouteConfig *route);
 
 		void handleGET();
-		void handlePOST(const std::string& http_request, size_t line_end);
+		void handlePOST(const std::string &http_request, size_t line_end);
 		void handleDELETE();
-		std::vector<std::string> parseMultipartBody(const std::string& body, const std::string& boundary, const std::string& uploadPath);
-		void send_error_response(int status_code, const std::string& message);
+		std::vector<std::string> parseMultipartBody(const std::string &body, const std::string &boundary, const std::string &uploadPath);
+		void error_response(int status_code, const std::string &message);
+		
 
 };
 
-
-	//size_t parseBodyLimit(const std::string& limit);

@@ -24,6 +24,8 @@ curl -v 127.0.0.1:8080
 
 -check redirects work with config
 
+-all checks on configure file
+
 -build out static webpages
 -stress test
 -CGI   , are you forms needed? if so, added to this part?

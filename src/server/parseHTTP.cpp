@@ -3,10 +3,10 @@
 /*                                                        ::::::::            */
 /*   parseHTTP.cpp                                      :+:    :+:            */
 /*                                                     +:+                    */
-/*   By: diwang <diwang@student.codam.nl>             +#+                     */
+/*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/10/05 13:51:24 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/09 14:30:31 by diwang        ########   odam.nl         */
+/*   Updated: 2025/10/26 16:09:32 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 
-ParseHTTP::ParseHTTP()
+ParseHTTP::ParseHTTP(): client(nullptr), config(nullptr), currentRoute(nullptr)
 {
 	
 }
@@ -25,12 +25,12 @@ ParseHTTP::~ParseHTTP()
 	
 }
 
-void ParseHTTP::setClient(Client* client)
+void ParseHTTP::setClient(Client *client)
 {
 	this->client = client;
 }
 
-void ParseHTTP::setConfig(const ServerConfig* config)
+void ParseHTTP::setConfig(const ServerConfig *config)
 {
 	this->config = config;
 }
@@ -40,19 +40,19 @@ std::string ParseHTTP::getResponse() const
 	return response;
 }
 
-std::string ParseHTTP::getMimeType(const std::string& path)
+std::string ParseHTTP::getMimeType(const std::string &path)
 {
-	size_t position = path.find_last_of('.');
+	size_t position = path.find_last_of(".");
 	if (position == std::string::npos)
 		return "application/octet-stream";
 	
 	std::string ext = path.substr(position + 1);
-	for (size_t i = 0; i < ext.size(); ++i)
-		ext[i] = std::tolower(ext[i]);
-	
-	if (ext == "html" || ext == "htm") 
+	for (size_t i = 0; i < ext.size(); i++)
+	 	ext[i] = std::tolower(ext[i]);
+
+	if (ext == "html" || ext == "htm")
 		return "text/html";
-	if (ext == "css") 
+	if (ext == "css")
 		return "text/css";
 	if (ext == "js") 
 		return "application/javascript";
@@ -84,6 +84,7 @@ std::string ParseHTTP::getMimeType(const std::string& path)
 		return "audio/wav";
 	
 	return "application/octet-stream";
+	
 }
 
 std::string ParseHTTP::urlConverter(const std::string& str)
@@ -115,7 +116,7 @@ std::string ParseHTTP::urlConverter(const std::string& str)
 	return decoded;
 }
 
-// Sanitize path to prevent directory traversal ******
+// Sanitize path to prevent directory traversal ****** might need to be more robust ******
 std::string ParseHTTP::sanitizePath(const std::string& path)
 {
 	std::string sanitized = urlConverter(path);
@@ -137,57 +138,56 @@ std::string ParseHTTP::sanitizePath(const std::string& path)
 	return sanitized;
 }
 
-
-const RouteConfig* ParseHTTP::findRoute(const std::string& path)
+const RouteConfig* ParseHTTP::findRoute(const std::string &path)
 {
+	//if there is no config loaded, end function
 	if (!config)
 		return nullptr;
-	
+
 	std::cerr << "=== FINDING ROUTE ===" << std::endl;
-	
-	const RouteConfig* bestMatch = nullptr;
+
+	//initialize pointer BestMatch to null and longestmatch to 0
+	const RouteConfig *bestMatch = nullptr;
 	size_t longestMatch = 0;
-	
-	for (const auto& route : config->routes)
+
+	// for loop we go through all the existing routes
+	// to track the longest matching route and the most specific
+	for (const auto &route : config->routes)
 	{
-		// Check if path starts with route.path
+		// does the path start with the route path, if so, returns 0
 		if (path.find(route.path) == 0)
 		{
-			// Make sure it's an exact match or followed by / or end of string
+			// capture the size of the route.path length
 			size_t route_len = route.path.length();
+			// if the route is greater than path, skip and go to the next route 
 			if (route_len > path.length())
 				continue;
-			// Exact match or route ends with / or path continues with /
+				
+			// if the length of path equals the route length that works, if the route path ends with / or the path ends with /
 			if (path.length() == route_len || route.path[route_len - 1] == '/' || path[route_len] == '/')
 			{
+				// if the route length is greater than 0
 				if (route_len > longestMatch)
 				{
 					bestMatch = &route;
 					longestMatch = route_len;
-					std::cerr << "  → Match found: '" << route.path << "'" << std::endl;
-				}
-			}
+					std::cerr << " Match found: '" << route.path << "'" << std::endl;
+				}	
+			}		
 		}
 	}
-	if (!bestMatch)
-		std::cerr << "  → NO MATCH FOUND!" << std::endl;
-	
-	std::cerr << "=== END FINDING ROUTE ===" << std::endl;
-	
 	return bestMatch;
 }
 
-
-bool ParseHTTP::methodInConfig(const std::string& method, const RouteConfig* route)
+bool ParseHTTP::methodInConfig(const std::string &method, const RouteConfig *route)
 {
 	if (!route)
 		return false;
-	for (const std::string &allowed : route->methods)
+	for (const auto &allowed : route->methods)
 	{
 		if (allowed == method)
 			return true;
 	}
-	
 	return false;
 }
 
@@ -195,59 +195,54 @@ void ParseHTTP::parse_http_request()
 {
 	if (!config)
 	{
-		send_error_response(500, "Internal Server Error: No configuration");
-		return;
+		error_response(500, "Internal Server Error: no config loaded");
+		return ;
 	}
-	std::string http_request = client->getRequest();
-
-	size_t line_end = http_request.find("\r\n");
-	if (line_end == std::string::npos)
+	std::string request = client->getRequest();
+	
+	size_t end_of_header = request.find("\r\n\r\n");
+	if (end_of_header == std::string::npos)
 	{
-		send_error_response(400, "Bad Request");
-		return;
+		error_response(400, "bad request");
+		return ;
 	}
 	
-	std::string line = http_request.substr(0, line_end);
+	std::string line = request.substr(0, end_of_header);
 	std::istringstream iss(line);
 	std::string method1, path1, version1;
 	if (!(iss >> method1 >> path1 >> version1))
 	{
-		send_error_response(400, "Bad Request");
-		return;
+		error_response(400, "bad request");
+		return ;
 	}
-
-	method = method1;  
+	method = method1;
 	path = sanitizePath(path1);
-	version = version1;   
-	
-	if (path.empty() || path[0] != '/' || (version != "HTTP/1.1"))
+	version = version1;
+
+	if (path.empty() || path[0] != '/' || version != "HTTP/1.1")
 	{
-		send_error_response(400, "Bad Request");
-		return;
+		error_response(400, "bad request");
+		return ;
 	}
-	
-	const RouteConfig* route = findRoute(path);
-	
+	const RouteConfig *route = findRoute(path);
 	if (!route)
 	{
-		std::cerr << "404: Route not found" << std::endl;
-		send_error_response(404, "Not Found");
-		return;
+		error_response(404, "route not found");
+		return ;
 	}
 	if (!methodInConfig(method, route))
 	{
-		send_error_response(405, "Method in Config File");
-		return;
+		error_response(405, "no match in config file");
+		return ;
 	}
-	
 	if (!route->redirectTo.empty())
 	{
-		response = 
-			"HTTP/1.1 301 Moved Permanently\r\n"
-			"Location: " + route->redirectTo + "\r\n"
+		response =
+			"HTTP/1.1 301 Moved permanently\r\n"
+			"Location: " + route->redirectTo + "r\n"
 			"Content-Length: 0\r\n"
 			"\r\n";
-		return;
+		return ;
 	}
 	
 	currentRoute = route;
@@ -259,27 +254,16 @@ void ParseHTTP::parse_http_request()
 	// }
 	
 	if (method == "GET")
-	{
 		handleGET();
-	}
 	else if (method == "POST")
-	{
-		handlePOST(http_request, line_end);
-	}
+		handlePOST(request, end_of_header);
 	else if (method == "DELETE")
-	{
 		handleDELETE();
-	}
+	
 }
 
 void ParseHTTP::handleGET()
 {
-	std::cerr << "=== HANDLE GET ===" << std::endl;
-	std::cerr << "Original path: '" << path << "'" << std::endl;
-	std::cerr << "Current route path: '" << currentRoute->path << "'" << std::endl;
-	std::cerr << "Config root: '" << config->root << "'" << std::endl;
-	std::cerr << "Config index: '" << config->index << "'" << std::endl;
-	
 	std::string file_path;
 	
 	if (path == "/" || path == currentRoute->path)
@@ -287,55 +271,40 @@ void ParseHTTP::handleGET()
 		if (!config->index.empty())
 		{
 			path = "/" + config->index;
-			std::cout << "TESTING HERE: " << path << std::endl;
-		}
+		}	
 		else
 			path = "/index.html";
-		std::cerr << "Using index, new path: '" << path << "'" << std::endl;
 	}
-	
 	if (!currentRoute->uploadPath.empty() && path.find(currentRoute->path) == 0)
 	{
-		std::string relative = path.substr(currentRoute->path.length()); // would like to combine these
+		std::string relative = path.substr(currentRoute->path.length());
 		file_path = currentRoute->uploadPath + relative;
-		std::cerr << "Serving from upload path: '" << file_path << "'" << std::endl;
 	}
-	else
-	{
+	else	
 		file_path = config->root + path;
-		std::cerr << "Serving from root: '" << file_path << "'" << std::endl;
-	}
-	
-	std::cerr << "Attempting to open: '" << file_path << "'" << std::endl;
 	
 	std::ifstream file(file_path, std::ios::binary);
-	
 	if (!file)
 	{
-		std::cerr << "ERROR: File not found! === END HANDLE GET ===" << std::endl;
-		send_error_response(404, "Not Found");
-		return;
+		error_response(404, "Not Found");
+		return ;
 	}
-	
-	std::cerr << "File opened successfully!" << std::endl;
-	
+
 	std::stringstream get_content;
 	get_content << file.rdbuf();
 	std::string content = get_content.str();
-	
-	std::cerr << "Content size: " << content.size() << " bytes" << std::endl;
-	
+
 	std::string mime_type = getMimeType(file_path);
-	
-	response =
-		"HTTP/1.1 200 OK\r\n"
-		"Content-Type: " + mime_type + "\r\n"
+
+	response = 
+		"HTTP/1.1 200 OK\r\n";
+		"Content-Type: " + mime_type + "r\n"
 		"Content-Length: " + std::to_string(content.size()) + "\r\n"
 		"\r\n" +
 		content;
-	
-	std::cerr << "=== END HANDLE GET ===" << std::endl;
+		
 }
+
 
 void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 {
@@ -347,7 +316,7 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 	size_t header_end = http_request.find("\r\n\r\n");
 	if (header_end == std::string::npos)
 	{
-		send_error_response(400, "Bad Request: malformed headers");
+		error_response(400, "Bad Request: malformed headers");
 		return;
 	}
 	
@@ -387,7 +356,7 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 
 	if (boundary.empty())
 	{
-		send_error_response(400, "Bad Request: no boundary");
+		error_response(400, "Bad Request: no boundary");
 		return;
 	}
 
@@ -396,7 +365,7 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 	// Check if route has upload path configured
 	if (currentRoute->uploadPath.empty())
 	{
-		send_error_response(403, "Uploads not allowed for this route");
+		error_response(403, "Uploads not allowed for this route");
 		return;
 	}
 
@@ -404,7 +373,7 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 	
 	if (uploaded_files.empty())
 	{
-		send_error_response(400, "No files found in request");
+		error_response(400, "No files found in request");
 		return;
 	}
 	
@@ -522,7 +491,7 @@ void ParseHTTP::handleDELETE()
 {
 	if (currentRoute->uploadPath.empty())
 	{
-		send_error_response(403, "Forbidden");
+		error_response(403, "Forbidden");
 		return;
 	}
 
@@ -541,11 +510,11 @@ void ParseHTTP::handleDELETE()
 	}
 	else
 	{
-		send_error_response(404, "Not Found");
+		error_response(404, "Not Found");
 	}
 }
 
-void ParseHTTP::send_error_response(int status_code, const std::string& message)
+void ParseHTTP::error_response(int status_code, const std::string& message)
 {
 
 	std::cerr << "=== SENDING ERROR RESPONSE ===" << std::endl;
@@ -591,7 +560,7 @@ void ParseHTTP::send_error_response(int status_code, const std::string& message)
 // 	// Check if route has CGI configured
 // 	if (currentRoute->cgiPath.empty())
 // 	{
-// 		send_error_response(500, "CGI not configured for this route");
+// 		error_response(500, "CGI not configured for this route");
 // 		return;
 // 	}
 	
@@ -602,14 +571,14 @@ void ParseHTTP::send_error_response(int status_code, const std::string& message)
 // 	// Check if file exists
 // 	if (access(script_path.c_str(), F_OK) != 0)
 // 	{
-// 		send_error_response(404, "CGI script not found");
+// 		error_response(404, "CGI script not found");
 // 		return;
 // 	}
 	
 // 	// Check if executable
 // 	if (access(script_path.c_str(), X_OK) != 0)
 // 	{
-// 		send_error_response(403, "CGI script not executable");
+// 		error_response(403, "CGI script not executable");
 // 		return;
 // 	}
 	
@@ -626,7 +595,7 @@ void ParseHTTP::send_error_response(int status_code, const std::string& message)
 	
 // 	if (cgi_output.empty())
 // 	{
-// 		send_error_response(500, "CGI script failed");
+// 		error_response(500, "CGI script failed");
 // 		return;
 // 	}
 	
@@ -761,3 +730,159 @@ void ParseHTTP::send_error_response(int status_code, const std::string& message)
 // 	return "";
 // }
 
+
+
+
+
+//EXTRA/ADDITOINAL CODE
+
+// void ParseHTTP::parse_http_request()
+// {
+	
+	// if (!route->redirectTo.empty())
+	// {
+	// 	response = 
+	// 		"HTTP/1.1 301 Moved Permanently\r\n"
+	// 		"Location: " + route->redirectTo + "\r\n"
+	// 		"Content-Length: 0\r\n"
+	// 		"\r\n";
+	// 	return;
+	// }
+	
+	// currentRoute = route;
+
+	// if (!currentRoute->cgiPath.empty())
+	// {
+	// 	handleCGI();
+	// 	return;
+	// }
+	
+	// if (method == "GET")
+	// {
+	// 	handleGET();
+	// }
+	// else if (method == "POST")
+	// {
+	// 	handlePOST(request, end_of_line);
+	// }
+	// else if (method == "DELETE")
+	// {
+	// 	handleDELETE();
+	// }
+
+	// if (!config)
+	// {
+	// 	error_response(500, "Internal Server Error: No configuration");
+	// 	return;
+	// }
+	// std::string http_request = client->getRequest();
+
+	// size_t line_end = http_request.find("\r\n");
+	// if (line_end == std::string::npos)
+	// {
+	// 	error_response(400, "Bad Request");
+	// 	return;
+	// }
+	
+	// std::string line = http_request.substr(0, line_end);
+	// std::istringstream iss(line);
+	// std::string method1, path1, version1;
+	// if (!(iss >> method1 >> path1 >> version1))
+	// {
+	// 	error_response(400, "Bad Request");
+	// 	return;
+	// }
+
+	// method = method1;  
+	// path = sanitizePath(path1);
+	// version = version1;   
+	
+	// if (path.empty() || path[0] != '/' || (version != "HTTP/1.1"))
+	// {
+	// 	error_response(400, "Bad Request");
+	// 	return;
+	// }
+	
+	// const RouteConfig* route = findRoute(path);
+	
+	// if (!route)
+	// {
+	// 	std::cerr << "404: Route not found" << std::endl;
+	// 	error_response(404, "Not Found");
+	// 	return;
+	// }
+	// if (!methodInConfig(method, route))
+	// {
+	// 	error_response(405, "Method in Config File");
+	// 	return;
+	// }
+// }
+
+
+//void ParseHTTP::handleGET()
+//{
+	// std::ifstream file(file_path, std::ios::binary);
+	// if (!file)
+	// {
+	// 	std::cerr << "ERROR: File not found! === END HANDLE GET ===" << std::endl;
+	// 	error_response(404, "Not Found");
+	// 	return;
+	// }
+	
+	// std::cerr << "File opened successfully!" << std::endl;
+	
+	// std::stringstream get_content;
+	// get_content << file.rdbuf();
+	// std::string content = get_content.str();
+	
+	// std::cerr << "Content size: " << content.size() << " bytes" << std::endl;
+	
+	// std::string mime_type = getMimeType(file_path);
+	
+	// response =
+	// 	"HTTP/1.1 200 OK\r\n"
+	// 	"Content-Type: " + mime_type + "\r\n"
+	// 	"Content-Length: " + std::to_string(content.size()) + "\r\n"
+	// 	"\r\n" +
+	// 	content;
+	
+	// std::cerr << "=== END HANDLE GET ===" << std::endl;
+
+	// std::cerr << "=== HANDLE GET ===" << std::endl;
+	// std::cerr << "Original path: '" << path << "'" << std::endl;
+	// std::cerr << "Current route path: '" << currentRoute->path << "'" << std::endl;
+	// std::cerr << "Config root: '" << config->root << "'" << std::endl;
+	// std::cerr << "Config index: '" << config->index << "'" << std::endl;
+	
+	// std::string file_path;
+	
+	// if (path == "/" || path == currentRoute->path)
+	// {
+	// 	if (!config->index.empty())
+	// 	{
+	// 		path = "/" + config->index;
+	// 		std::cout << "TESTING HERE: " << path << std::endl;
+	// 	}
+	// 	else
+	// 		path = "/index.html";
+	// 	std::cerr << "Using index, new path: '" << path << "'" << std::endl;
+	// }
+	
+	// if (!currentRoute->uploadPath.empty() && path.find(currentRoute->path) == 0)
+	// {
+	// 	std::string relative = path.substr(currentRoute->path.length()); // would like to combine these
+	// 	file_path = currentRoute->uploadPath + relative;
+	// 	std::cerr << "Serving from upload path: '" << file_path << "'" << std::endl;
+	// }
+	// else
+	// {
+	// 	file_path = config->root + path;
+	// 	std::cerr << "Serving from root: '" << file_path << "'" << std::endl;
+	// }
+	
+	// std::cerr << "Attempting to open: '" << file_path << "'" << std::endl;
+	
+
+	
+	
+//}
