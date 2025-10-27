@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/10/05 13:51:24 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/26 16:09:32 by diwang        ########   odam.nl         */
+/*   Updated: 2025/10/27 17:46:33 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -176,11 +176,15 @@ const RouteConfig* ParseHTTP::findRoute(const std::string &path)
 			}		
 		}
 	}
+	if (!bestMatch)
+		std::cerr << " no match found" << std::endl;
+		
 	return bestMatch;
 }
 
 bool ParseHTTP::methodInConfig(const std::string &method, const RouteConfig *route)
 {
+	
 	if (!route)
 		return false;
 	for (const auto &allowed : route->methods)
@@ -227,7 +231,7 @@ void ParseHTTP::parse_http_request()
 	const RouteConfig *route = findRoute(path);
 	if (!route)
 	{
-		error_response(404, "route not found");
+		error_response(404, "not found");
 		return ;
 	}
 	if (!methodInConfig(method, route))
@@ -239,7 +243,7 @@ void ParseHTTP::parse_http_request()
 	{
 		response =
 			"HTTP/1.1 301 Moved permanently\r\n"
-			"Location: " + route->redirectTo + "r\n"
+			"Location: " + route->redirectTo + "\r\n"
 			"Content-Length: 0\r\n"
 			"\r\n";
 		return ;
@@ -259,11 +263,24 @@ void ParseHTTP::parse_http_request()
 		handlePOST(request, end_of_header);
 	else if (method == "DELETE")
 		handleDELETE();
+	else 
+		{
+			error_response(501, "method not implemented");
+			return ;
+		}
 	
 }
 
+
 void ParseHTTP::handleGET()
 {
+
+	std::cerr << "=== HANDLE GET ===" << std::endl;
+	std::cerr << "Original path: '" << path << "'" << std::endl;
+	std::cerr << "Current route path: '" << currentRoute->path << "'" << std::endl;
+	std::cerr << "Config root: '" << config->root << "'" << std::endl;
+	std::cerr << "Config index: '" << config->index << "'" << std::endl;
+	
 	std::string file_path;
 	
 	if (path == "/" || path == currentRoute->path)
@@ -286,7 +303,15 @@ void ParseHTTP::handleGET()
 	std::ifstream file(file_path, std::ios::binary);
 	if (!file)
 	{
-		error_response(404, "Not Found");
+		struct stat st;
+		if (stat(file_path.c_str(), &st) == 0)
+		{
+			error_response(403, "Forbidden");
+		}
+		else
+		{
+			error_response(404, "Not Found");
+		}
 		return ;
 	}
 
@@ -297,8 +322,8 @@ void ParseHTTP::handleGET()
 	std::string mime_type = getMimeType(file_path);
 
 	response = 
-		"HTTP/1.1 200 OK\r\n";
-		"Content-Type: " + mime_type + "r\n"
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Type: " + mime_type + "\r\n"
 		"Content-Length: " + std::to_string(content.size()) + "\r\n"
 		"\r\n" +
 		content;
@@ -316,7 +341,7 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 	size_t header_end = http_request.find("\r\n\r\n");
 	if (header_end == std::string::npos)
 	{
-		error_response(400, "Bad Request: malformed headers");
+		error_response(400, "bad request");
 		return;
 	}
 	
@@ -353,10 +378,16 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 				boundary = "--" + value.substr(bpos + 9);
 		}
 	}
-
+	
+	// if (content_length > static_cast<int>(config->bodyLimit))
+	// {
+	// 	error_response(413, "payload too large");
+	// 	return ;
+	// }
+	
 	if (boundary.empty())
 	{
-		error_response(400, "Bad Request: no boundary");
+		error_response(400, "bad request");
 		return;
 	}
 
@@ -365,7 +396,7 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 	// Check if route has upload path configured
 	if (currentRoute->uploadPath.empty())
 	{
-		error_response(403, "Uploads not allowed for this route");
+		error_response(403, "Foridden");
 		return;
 	}
 
@@ -373,7 +404,7 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 	
 	if (uploaded_files.empty())
 	{
-		error_response(400, "No files found in request");
+		error_response(400, "bad request");
 		return;
 	}
 	
@@ -513,6 +544,7 @@ void ParseHTTP::handleDELETE()
 		error_response(404, "Not Found");
 	}
 }
+
 
 void ParseHTTP::error_response(int status_code, const std::string& message)
 {
@@ -886,3 +918,74 @@ void ParseHTTP::error_response(int status_code, const std::string& message)
 	
 	
 //}
+
+// void ParseHTTP::parse_http_request()
+// {
+// 	if (!config)
+// 	{
+// 		error_response(500, "Internal Server Error: no config loaded");
+// 		return ;
+// 	}
+// 	std::string request = client->getRequest();
+	
+// 	size_t end_of_header = request.find("\r\n\r\n");
+// 	if (end_of_header == std::string::npos)
+// 	{
+// 		error_response(400, "bad request");
+// 		return ;
+// 	}
+	
+// 	std::string line = request.substr(0, end_of_header);
+// 	std::istringstream iss(line);
+// 	std::string method1, path1, version1;
+// 	if (!(iss >> method1 >> path1 >> version1))
+// 	{
+// 		error_response(400, "bad request");
+// 		return ;
+// 	}
+// 	method = method1;
+// 	path = sanitizePath(path1);
+// 	version = version1;
+
+// 	if (path.empty() || path[0] != '/' || version != "HTTP/1.1")
+// 	{
+// 		error_response(400, "bad request");
+// 		return ;
+// 	}
+// 	const RouteConfig *route = findRoute(path);
+// 	if (!route)
+// 	{
+// 		error_response(404, "route not found");
+// 		return ;
+// 	}
+// 	if (!methodInConfig(method, route))
+// 	{
+// 		error_response(405, "no match in config file");
+// 		return ;
+// 	}
+// 	if (!route->redirectTo.empty())
+// 	{
+// 		response =
+// 			"HTTP/1.1 301 Moved permanently\r\n"
+// 			"Location: " + route->redirectTo + "r\n"
+// 			"Content-Length: 0\r\n"
+// 			"\r\n";
+// 		return ;
+// 	}
+	
+// 	currentRoute = route;
+
+// 	// if (!currentRoute->cgiPath.empty())
+// 	// {
+// 	// 	handleCGI();
+// 	// 	return;
+// 	// }
+	
+// 	if (method == "GET")
+// 		handleGET();
+// 	else if (method == "POST")
+// 		handlePOST(request, end_of_header);
+// 	else if (method == "DELETE")
+// 		handleDELETE();
+	
+// }

@@ -10,25 +10,20 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-
-
 127.0.0.1:8080
 curl -v 127.0.0.1:8080
 
+- check error pages work with config - they do but can confirm
+- add size_t bodylimit to config for 413 error  
+- check about defaulting to index.html
 
--check error pages work with config
--which errors DO I NEED?
--generate 500 error
-
--check about defaulting to index.html
-
--check redirects work with config
-
--all checks on configure file
+-all checks on config file
 
 -build out static webpages
 -stress test
 -CGI   , are you forms needed? if so, added to this part?
+
+website can be fun dutch phrases.
 
 Yasaman to test against EVAL Sheet
 Diane/Elroy to work on the CGI  
