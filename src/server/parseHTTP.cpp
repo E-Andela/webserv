@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/10/05 13:51:24 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/27 17:46:33 by diwang        ########   odam.nl         */
+/*   Updated: 2025/10/27 18:39:47 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -251,11 +251,11 @@ void ParseHTTP::parse_http_request()
 	
 	currentRoute = route;
 
-	// if (!currentRoute->cgiPath.empty())
-	// {
-	// 	handleCGI();
-	// 	return;
-	// }
+	if (!currentRoute->cgiPath.empty())
+	{
+		handleCGI();
+		return;
+	}
 	
 	if (method == "GET")
 		handleGET();
@@ -584,183 +584,184 @@ void ParseHTTP::error_response(int status_code, const std::string& message)
 
 
 // TESTING TO UNDERSTAND FUNCTIONALALITY//
-// void ParseHTTP::handleCGI()
-// {
-// 	std::cerr << "=== HANDLE CGI ===" << std::endl;
-// 	std::cerr << "Path: '" << path << "'" << std::endl;
+void ParseHTTP::handleCGI()
+{
+	std::cerr << "=== HANDLE CGI ===" << std::endl;
+	std::cerr << "Path: '" << path << "'" << std::endl;
 	
-// 	// Check if route has CGI configured
-// 	if (currentRoute->cgiPath.empty())
-// 	{
-// 		error_response(500, "CGI not configured for this route");
-// 		return;
-// 	}
+	// Check if route has CGI configured
+	if (currentRoute->cgiPath.empty())
+	{
+		error_response(500, "CGI not configured for this route");
+		return;
+	}
 	
-// 	// Build script path
-// 	std::string script_path = currentRoute->cgiPath + path.substr(currentRoute->path.length());
-// 	std::cerr << "Script path: '" << script_path << "'" << std::endl;
+	// Build script path
+	std::string script_path = currentRoute->cgiPath + path.substr(currentRoute->path.length());
+	std::cerr << "Script path: '" << script_path << "'" << std::endl;
 	
-// 	// Check if file exists
-// 	if (access(script_path.c_str(), F_OK) != 0)
-// 	{
-// 		error_response(404, "CGI script not found");
-// 		return;
-// 	}
+	// Check if file exists
+	if (access(script_path.c_str(), F_OK) != 0)
+	{
+		error_response(404, "CGI script not found");
+		return;
+	}
 	
-// 	// Check if executable
-// 	if (access(script_path.c_str(), X_OK) != 0)
-// 	{
-// 		error_response(403, "CGI script not executable");
-// 		return;
-// 	}
+	// Check if executable
+	if (access(script_path.c_str(), X_OK) != 0)
+	{
+		error_response(403, "CGI script not executable");
+		return;
+	}
 	
-// 	// Parse query string if present
-// 	std::string query_string;
-// 	size_t query_pos = path.find('?');
-// 	if (query_pos != std::string::npos)
-// 	{
-// 		query_string = path.substr(query_pos + 1);
-// 	}
+	// Parse query string if present
+	std::string query_string;
+	size_t query_pos = path.find('?');
+	if (query_pos != std::string::npos)
+	{
+		query_string = path.substr(query_pos + 1);
+	}
 	
-// 	// Execute CGI script
-// 	std::string cgi_output = executeCGI(script_path, query_string);
+	// Execute CGI script
+	std::string cgi_output = executeCGI(script_path, query_string);
 	
-// 	if (cgi_output.empty())
-// 	{
-// 		error_response(500, "CGI script failed");
-// 		return;
-// 	}
+	if (cgi_output.empty())
+	{
+		error_response(500, "CGI script failed");
+		return;
+	}
 	
-// 	// Parse CGI output (headers + body)
-// 	size_t header_end = cgi_output.find("\r\n\r\n");
-// 	if (header_end == std::string::npos)
-// 		header_end = cgi_output.find("\n\n");
+	// Parse CGI output (headers + body)
+	size_t header_end = cgi_output.find("\r\n\r\n");
+	if (header_end == std::string::npos)
+		header_end = cgi_output.find("\n\n");
 	
-// 	if (header_end != std::string::npos)
-// 	{
-// 		// CGI script provided headers
-// 		response = "HTTP/1.1 200 OK\r\n" + cgi_output;
-// 	}
-// 	else
-// 	{
-// 		// No headers from CGI, add default
-// 		response = 
-// 			"HTTP/1.1 200 OK\r\n"
-// 			"Content-Type: text/html\r\n"
-// 			"Content-Length: " + std::to_string(cgi_output.size()) + "\r\n"
-// 			"\r\n" +
-// 			cgi_output;
-// 	}
+	if (header_end != std::string::npos)
+	{
+		// CGI script provided headers
+		response = "HTTP/1.1 200 OK\r\n" + cgi_output;
+	}
+	else
+	{
+		// No headers from CGI, add default
+		response = 
+			"HTTP/1.1 200 OK\r\n"
+			"Content-Type: text/html\r\n"
+			"Content-Length: " + std::to_string(cgi_output.size()) + "\r\n"
+			"\r\n" +
+			cgi_output;
+	}
 	
-// 	std::cerr << "=== END HANDLE CGI ===" << std::endl;
-// }
+	std::cerr << "=== END HANDLE CGI ===" << std::endl;
+}
 
 // // TESTING TO UNDERSTAND FUNCTIONALALITY//
-// std::string ParseHTTP::executeCGI(const std::string& script_path, const std::string& query_string)
-// {
-// 	int pipe_fd[2];
-// 	if (pipe(pipe_fd) == -1)
-// 	{
-// 		std::cerr << "Failed to create pipe" << std::endl;
-// 		return "";
-// 	}
+std::string ParseHTTP::executeCGI(const std::string& script_path, const std::string& query_string)
+{
+	int fd[2];
+	if (pipe(fd) == -1)
+	{
+		std::cerr << "Failed to create pipe" << std::endl;
+		return "";
+	}
 	
-// 	pid_t pid = fork();
+	pid_t pid = fork();
 	
-// 	if (pid == -1)
-// 	{
-// 		std::cerr << "Failed to fork" << std::endl;
-// 		close(pipe_fd[0]);
-// 		close(pipe_fd[1]);
-// 		return "";
-// 	}
+	if (pid == -1)
+	{
+		std::cerr << "Failed to fork" << std::endl;
+		close(fd[0]);
+		close(fd[1]);
+		return "";
+	}
 	
-// 	if (pid == 0)
-// 	{
-// 		// Child process
-// 		close(pipe_fd[0]); // Close read end
+	if (pid == 0)
+	{
+		// Child process
+		close(fd[0]); // Close read end
 		
-// 		// Redirect stdout to pipe
-// 		dup2(pipe_fd[1], STDOUT_FILENO);
-// 		close(pipe_fd[1]);
+		// Redirect stdout to pipe
+		dup2(fd[1], STDOUT_FILENO);
+		close(fd[1]);
 		
-// 		// Build environment variables as array
-// 		std::string env_method = "REQUEST_METHOD=" + method;
-// 		std::string env_query = "QUERY_STRING=" + query_string;
-// 		std::string env_length = "CONTENT_LENGTH=0";
-// 		std::string env_script = "SCRIPT_FILENAME=" + script_path;
-// 		std::string env_redirect = "REDIRECT_STATUS=200";
+		// Build environment variables as array
+		std::string env_method = "REQUEST_METHOD=" + method;
+		std::string env_query = "QUERY_STRING=" + query_string;
+		std::string env_length = "CONTENT_LENGTH=0";
+		std::string env_script = "SCRIPT_FILENAME=" + script_path;
+		std::string env_redirect = "REDIRECT_STATUS=200";
 		
-// 		// Create char* array for environment
-// 		char* envp[] = 
-// 		{
-// 			const_cast<char*>(env_method.c_str()),
-// 			const_cast<char*>(env_query.c_str()),
-// 			const_cast<char*>(env_length.c_str()),
-// 			const_cast<char*>(env_script.c_str()),
-// 			const_cast<char*>(env_redirect.c_str()),
-// 			NULL
-// 		};
+		// Create char* array for environment
+		char* envp[] = 
+		{
+			const_cast<char*>(env_method.c_str()),
+			const_cast<char*>(env_query.c_str()),
+			const_cast<char*>(env_length.c_str()),
+			const_cast<char*>(env_script.c_str()),
+			const_cast<char*>(env_redirect.c_str()),
+			NULL
+		};
 		
-// 		// Determine interpreter based on extension
-// 		std::string interpreter;
-// 		if (script_path.find(".py") != std::string::npos)
-// 			interpreter = "/usr/bin/python3";
-// 		else if (script_path.find(".php") != std::string::npos)
-// 			interpreter = "/usr/bin/php-cgi";
-// 		else if (script_path.find(".sh") != std::string::npos)
-// 			interpreter = "/bin/bash";
-// 		else
-// 			interpreter = script_path; // Assume it's executable itself
+		// Determine interpreter based on extension
+		std::string interpreter;
+		if (script_path.find(".py") != std::string::npos)
+			interpreter = "/usr/bin/python3";
+		else if (script_path.find(".php") != std::string::npos)
+			interpreter = "/usr/bin/php-cgi";
+		else if (script_path.find(".sh") != std::string::npos)
+			interpreter = "/bin/bash";
+		else
+			interpreter = script_path; // Assume it's executable itself
 		
-// 		// Execute script
-// 		char* argv[] = {
-// 			const_cast<char*>(interpreter.c_str()),
-// 			const_cast<char*>(script_path.c_str()),
-// 			NULL
-// 		};
+		// Execute script
+		char* argv[] = 
+		{
+			const_cast<char*>(interpreter.c_str()),
+			const_cast<char*>(script_path.c_str()),
+			NULL
+		};
 		
-// 		execve(interpreter.c_str(), argv, envp);
+		execve(interpreter.c_str(), argv, envp);
 		
-// 		// If execve fails
-// 		std::cerr << "execve failed" << std::endl;
-// 		exit(1);
-// 	}
-// 	else
-// 	{
-// 		// Parent process
-// 		close(pipe_fd[1]); // Close write end
+		// If execve fails
+		std::cerr << "execve failed" << std::endl;
+		exit(1);
+	}
+	else
+	{
+		// Parent process
+		close(fd[1]); // Close write end
 		
-// 		// Read output from child
-// 		std::string output;
-// 		char buffer[4096];
-// 		ssize_t bytes_read;
+		// Read output from child
+		std::string output;
+		char buffer[4096];
+		ssize_t bytes_read;
 		
-// 		while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer))) > 0)
-// 		{
-// 			output.append(buffer, bytes_read);
-// 		}
+		while ((bytes_read = read(fd[0], buffer, sizeof(buffer))) > 0)
+		{
+			output.append(buffer, bytes_read);
+		}
 		
-// 		close(pipe_fd[0]);
+		close(fd[0]);
 		
-// 		// Wait for child to finish
-// 		int status;
-// 		waitpid(pid, &status, 0);
+		// Wait for child to finish
+		int status;
+		waitpid(pid, &status, 0);
 		
-// 		if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-// 		{
-// 			std::cerr << "CGI script executed successfully" << std::endl;
-// 			return output;
-// 		}
-// 		else
-// 		{
-// 			std::cerr << "CGI script failed with status: " << WEXITSTATUS(status) << std::endl;
-// 			return "";
-// 		}
-// 	}
+		if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+		{
+			std::cerr << "CGI script executed successfully" << std::endl;
+			return output;
+		}
+		else
+		{
+			std::cerr << "CGI script failed with status: " << WEXITSTATUS(status) << std::endl;
+			return "";
+		}
+	}
 	
-// 	return "";
-// }
+	return "";
+}
 
 
 

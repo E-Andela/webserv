@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/08/29 18:49:16 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/26 13:29:58 by diwang        ########   odam.nl         */
+/*   Updated: 2025/10/27 18:34:40 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,8 @@
 #include <cerrno>
 #include <cstring>
 #include "Config/ServerConfig.hpp"
+#include "unistd.h"
+#include "sys/wait.h"
 
 class Client;
 
@@ -53,6 +55,8 @@ class ParseHTTP
 		void handleGET();
 		void handlePOST(const std::string &http_request, size_t line_end);
 		void handleDELETE();
+		void handleCGI();
+		std::string executeCGI(const std::string& script_path, const std::string& query_string);
 		std::vector<std::string> parseMultipartBody(const std::string &body, const std::string &boundary, const std::string &uploadPath);
 		void error_response(int status_code, const std::string &message);
 		
