@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/10/05 13:51:24 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/30 16:31:39 by eandela       ########   odam.nl         */
+/*   Updated: 2025/10/30 20:41:54 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -437,11 +437,11 @@ void ParseHTTP::handleHEAD()
 // 		}
 // 	}
 	
-// 	// if (content_length > static_cast<int>(config->bodyLimit))
-// 	// {
-// 	// 	error_response(413, "payload too large");
-// 	// 	return ;
-// 	// }
+	// if (content_length > static_cast<int>(config->bodyLimit))
+	// {
+	// 	error_response(413, "payload too large");
+	// 	return ;
+	// }
 	
 // 	if (boundary.empty())
 // 	{
@@ -569,159 +569,196 @@ void ParseHTTP::parse_http_request()
 }
 
 
-// void ParseHTTP::handleGET()
-// {
-//     std::cerr << "=== HANDLE GET ===" << std::endl;
-//     std::cerr << "Original path: '" << path << "'" << std::endl;
-//     std::cerr << "Current route path: '" << currentRoute->path << "'" << std::endl;
-//     std::cerr << "Config root: '" << config->root << "'" << std::endl;
-//     std::cerr << "Config index: '" << config->index << "'" << std::endl;
-//     std::string file_path;
-//     if (path == "/" || path == currentRoute->path)
-//     {
-//         if (!config->index.empty())
-//         {
-//             path = "/" + config->index;
-//             std::cout << "TESTING HERE: " << path << std::endl;
-//         }
-//         else
-//             path = "/index.html";
-//         std::cerr << "Using index, new path: '" << path << "'" << std::endl;
-//     }
-//     // if (!currentRoute->uploadPath.empty() && path.find(currentRoute->path) == 0)
-//     // {
-//     //     std::string relative = path.substr(currentRoute->path.length()); // would like to combine these
-//     //     file_path = currentRoute->uploadPath + "/" + relative; 
-// 	// 	std::cerr << "LOOP: '" << file_path << "'" <<  std::endl;
-//     // }
-//     // else
-//     // {
-//         file_path = config->root + path;
-// 		// std::cerr << "LOOPY: '" << file_path << "'" <<  std::endl;
-// 		if (config->root.back() == '/' && path.front() == '/')
-//         	file_path = config->root + path.substr(1);
-//     	else if (config->root.back() != '/' && path.front() != '/')
-//         	file_path = config->root + "/" + path;
-//     	else
-//         	file_path = config->root + path;
-
-//     std::cerr << "ROOT PATH used: '" << file_path << "'" << std::endl;
-
-// 	std::cerr << "Computed file path 1: '" << file_path << "'" <<  std::endl;
-// 		struct stat st;  
-// 		if (stat(file_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode))  
-// 		{  //It's a directory - append index file  
-// 			// if (file_path.back() != '/')  
-// 			// 	file_path += "/";   
-// 			// if (!config->index.empty())  
-// 			// 	file_path += config->index;  
-// 			// else
-// 			// 	file_path += "index.html";   
-// 			// std::cerr << "Directory detected, trying index: '" << file_path << "'" << std::endl;
-	
-//     		if (file_path.back() != '/')
-// 			{
-//         		file_path += "/";
-// 			}
-//    			file_path += !config->index.empty() ? config->index : "index.html";
-//     		std::cerr << "Directory detected, using index file: '" << file_path << "'" << std::endl;
-// 		}
-// 	std::cerr << "Computed file path 2: '" << file_path << "'" <<  std::endl;
-//     std::ifstream file(file_path, std::ios::binary);
-// 	if (!file.is_open())
-// 	{
-//     	std::cerr << "Failed to open: " << strerror(errno) << std::endl;
-// 		send_error_response(404, "Not Found 2");
-// 		return ;
-// 	}
-//     // if (!file)
-//     // {
-//     //     send_error_response(404, "Not Found 2");
-//     //     return;
-//     // }
-
-	
-//     std::cerr << "File opened successfully!" << std::endl;
-//     std::stringstream get_content;
-//     get_content << file.rdbuf();
-//     std::string content = get_content.str();
-//     std::cerr << "Content size: " << content.size() << " bytes" << std::endl;
-//     std::string mime_type = getMimeType(file_path);
-//     response =
-//         "HTTP/1.1 200 OK\r\n"
-//         "Content-Type: " + mime_type + "\r\n"
-//         "Content-Length: " + std::to_string(content.size()) + "\r\n"
-//         "\r\n" +
-//         content;
-//     std::cerr << "=== END HANDLE GET ===" << std::endl;
-// }
-
 void ParseHTTP::handleGET()
 {
     std::cerr << "=== HANDLE GET ===" << std::endl;
     std::cerr << "Original path: '" << path << "'" << std::endl;
-
+    std::cerr << "Current route path: '" << currentRoute->path << "'" << std::endl;
+    std::cerr << "Config root: '" << config->root << "'" << std::endl;
+    std::cerr << "Config index: '" << config->index << "'" << std::endl;
     std::string file_path;
-
-    // --- Handle root or route index ---
     if (path == "/" || path == currentRoute->path)
     {
-        path = "/" + (!config->index.empty() ? config->index : "index.html");
+        if (!config->index.empty())
+        {
+            path = "/" + config->index;
+            std::cout << "TESTING HERE: " << path << std::endl;
+        }
+        else
+            path = "/index.html";
         std::cerr << "Using index, new path: '" << path << "'" << std::endl;
     }
-
-    // --- Resolve file path ---
     if (!currentRoute->uploadPath.empty() && path.find(currentRoute->path) == 0)
     {
-        std::string relative = path.substr(currentRoute->path.length());
-        file_path = currentRoute->uploadPath + relative;
+        std::string relative = path.substr(currentRoute->path.length()); // would like to combine these
+        file_path = currentRoute->uploadPath + "/" + relative; 
+		std::cerr << "LOOP: '" << file_path << "'" <<  std::endl;
+
+		if (currentRoute->uploadPath.back() == '/' && relative.front() == '/')
+            file_path = currentRoute->uploadPath + relative.substr(1);
+        else if (currentRoute->uploadPath.back() != '/' && !relative.empty() && relative.front() != '/')
+            file_path = currentRoute->uploadPath + "/" + relative;
+        else
+            file_path = currentRoute->uploadPath + relative;
     }
     else
     {
-        if (config->root.back() == '/' && path.front() == '/')
-            file_path = config->root + path.substr(1);
-        else if (config->root.back() != '/' && path.front() != '/')
-            file_path = config->root + "/" + path;
-        else
-            file_path = config->root + path;
-    }
+        file_path = config->root + path;
+		// std::cerr << "LOOPY: '" << file_path << "'" <<  std::endl;
+		if (config->root.back() == '/' && path.front() == '/')
+        	file_path = config->root + path.substr(1);
+    	else if (config->root.back() != '/' && path.front() != '/')
+        	file_path = config->root + "/" + path;
+    	else
+        	file_path = config->root + path;
+	}
+    std::cerr << "ROOT PATH used: '" << file_path << "'" << std::endl;
 
-    std::cerr << "Computed file path: '" << file_path << "'" << std::endl;
-
-    // --- Directory handling ---
-    struct stat st;
-    if (stat(file_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
-    {
-        if (file_path.back() != '/')
-            file_path += '/';
-        file_path += (!config->index.empty() ? config->index : "index.html");
-        std::cerr << "Directory detected, using index file: '" << file_path << "'" << std::endl;
-    }
-
-    // --- Open file ---
+	std::cerr << "Computed file path 1: '" << file_path << "'" <<  std::endl;
+	struct stat st;  
+		if (stat(file_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode))  
+		{  //It's a directory - append index file  
+			// if (file_path.back() != '/')  
+			// 	file_path += "/";   
+			// if (!config->index.empty())  
+			// 	file_path += config->index;  
+			// else
+			// 	file_path += "index.html";   
+			// std::cerr << "Directory detected, trying index: '" << file_path << "'" << std::endl;
+	
+    		if (file_path.back() != '/')
+			{
+        		file_path += "/";
+			}
+   			file_path += !config->index.empty() ? config->index : "index.html";
+    		std::cerr << "Directory detected, using index file: '" << file_path << "'" << std::endl;
+		}
+	std::cerr << "Computed file path 2: '" << file_path << "'" <<  std::endl;
     std::ifstream file(file_path, std::ios::binary);
-    if (!file.is_open())
-    {
-        std::cerr << "Failed to open: " << strerror(errno) << std::endl;
-        send_error_response(errno == EACCES ? 403 : 404, "Not Found");
-        return;
-    }
+	if (!file.is_open())
+	{
+    	std::cerr << "Failed to open: " << strerror(errno) << std::endl;
+		send_error_response(404, "Not Found 2");
+		return ;
+	}
+    // if (!file)
+    // {
+    //     send_error_response(404, "Not Found 2");
+    //     return;
+    // }
 
+	
+    std::cerr << "File opened successfully!" << std::endl;
     std::stringstream get_content;
     get_content << file.rdbuf();
     std::string content = get_content.str();
-
+    std::cerr << "Content size: " << content.size() << " bytes" << std::endl;
     std::string mime_type = getMimeType(file_path);
-    response = "HTTP/1.1 200 OK\r\n"
-               "Content-Type: " + mime_type + "\r\n"
-               "Content-Length: " + std::to_string(content.size()) + "\r\n"
-               "\r\n" +
-               content;
-
-    std::cerr << "File served successfully, " << content.size() << " bytes." << std::endl;
+    response =
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: " + mime_type + "\r\n"
+        "Content-Length: " + std::to_string(content.size()) + "\r\n"
+        "\r\n" +
+        content;
     std::cerr << "=== END HANDLE GET ===" << std::endl;
 }
 
+// void ParseHTTP::handleGET()
+// {
+//     std::cerr << "=== HANDLE GET ===" << std::endl;
+//     std::cerr << "Original path: '" << path << "'" << std::endl;
+
+//     std::string file_path;
+
+//     // --- Handle root or route index ---
+//     if (path == "/" || path == currentRoute->path)
+//     {
+//         path = "/" + (!config->index.empty() ? config->index : "index.html");
+//         std::cerr << "Using index, new path: '" << path << "'" << std::endl;
+//     }
+
+//     // --- Resolve file path ---
+//     if (!currentRoute->uploadPath.empty() && path.find(currentRoute->path) == 0)
+//     {
+//         std::string relative = path.substr(currentRoute->path.length());
+//         file_path = currentRoute->uploadPath + relative;
+//     }
+//     else
+//     {
+//         if (config->root.back() == '/' && path.front() == '/')
+//             file_path = config->root + path.substr(1);
+//         else if (config->root.back() != '/' && path.front() != '/')
+//             file_path = config->root + "/" + path;
+//         else
+//             file_path = config->root + path;
+//     }
+
+//     std::cerr << "Computed file path: '" << file_path << "'" << std::endl;
+
+//     // --- Directory handling ---
+//     struct stat st;
+//     if (stat(file_path.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+//     {
+//         if (file_path.back() != '/')
+//             file_path += '/';
+//         file_path += (!config->index.empty() ? config->index : "index.html");
+//         std::cerr << "Directory detected, using index file: '" << file_path << "'" << std::endl;
+//     }
+
+//     // --- Open file ---
+//     std::ifstream file(file_path, std::ios::binary);
+//     if (!file.is_open())
+//     {
+//         std::cerr << "Failed to open: " << strerror(errno) << std::endl;
+//         send_error_response(errno == EACCES ? 403 : 404, "Not Found");
+//         return;
+//     }
+
+//     std::stringstream get_content;
+//     get_content << file.rdbuf();
+//     std::string content = get_content.str();
+
+//     std::string mime_type = getMimeType(file_path);
+//     response = "HTTP/1.1 200 OK\r\n"
+//                "Content-Type: " + mime_type + "\r\n"
+//                "Content-Length: " + std::to_string(content.size()) + "\r\n"
+//                "\r\n" +
+//                content;
+
+//     std::cerr << "File served successfully, " << content.size() << " bytes." << std::endl;
+//     std::cerr << "=== END HANDLE GET ===" << std::endl;
+// }
+
+// std::string ParseHTTP::readChunkedBody()
+// {
+//     std::string full_body;
+    
+//     // Keep reading chunks until we hit the terminating chunk (size 0)
+//     while (true)
+//     {
+//         // 1. Read chunk size line (e.g., "8000\r\n")
+//         std::string size_line;
+//         // ... read from socket until you find \r\n ...
+        
+//         // 2. Parse the hex size
+//         size_t chunk_size = std::stoul(size_line, nullptr, 16);
+        
+//         // 3. If size is 0, we're done
+//         if (chunk_size == 0)
+//             break;
+        
+//         // 4. Read exactly chunk_size bytes of data
+//         char* chunk_data = new char[chunk_size];
+//         // ... read chunk_size bytes from socket ...
+//         full_body.append(chunk_data, chunk_size);
+//         delete[] chunk_data;
+        
+//         // 5. Read the trailing \r\n after the chunk data
+//         // ... read 2 bytes (\r\n) from socket ...
+//     }
+    
+//     return full_body;
+// }
 
 void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 {
@@ -729,10 +766,12 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
     std::cerr << "Path: '" << path << "'" << std::endl;
     std::cerr << "Current route path: '" << currentRoute->path << "'" << std::endl;
     std::cerr << "Upload path: '" << currentRoute->uploadPath << "'" << std::endl;
+
+	//bool is_chunked = false;
     size_t header_end = http_request.find("\r\n\r\n");
     if (header_end == std::string::npos)
     {
-        send_error_response(400, "bad request");
+        send_error_response(400, "bad request POST");
         return;
     }
     std::string header_block = http_request.substr(line_end + 2, header_end - (line_end + 2));
@@ -756,6 +795,11 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
         std::transform(key.begin(), key.end(), key.begin(), ::tolower);
         if (key == "content-length")
             content_length = std::stoi(value);
+		// if (key == "transfer-encoding")
+    	// {
+        // 	if (value.find("chunked") != std::string::npos)
+        //     	is_chunked = true;
+    	// }
         else if (key == "content-type" && value.find("multipart/form-data") != std::string::npos)
         {
             size_t bpos = value.find("boundary=");
@@ -763,24 +807,49 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
                 boundary = "--" + value.substr(bpos + 9);
         }
     }
-    if (boundary.empty())
+
+
+// NOW check the size
+//size_t max_body_size = currentRoute->BodySize;
+// size_t max_body_size = std::stoi(config->bodyLimit);
+// if (max_body_size > 0 && body.size() > max_body_size)
+// {
+//     send_error_response(413, "Payload Too Large");
+//     return;
+// }
+	// if (is_chunked)
+	// {
+   	// 	send_error_response(413, "Payload Too Large");
+    //     return;
+    // }
+	
+	std::string body = http_request.substr(header_end + 4);
+	std::vector<std::string> uploaded_files;
+
+    if (!boundary.empty() && !currentRoute->uploadPath.empty())
     {
-        send_error_response(400, "bad request");
-        return;
-    }
-    std::string body = http_request.substr(header_end + 4);
+		uploaded_files = parseMultipartBody(body, boundary, currentRoute->uploadPath);
+		if (uploaded_files.empty())
+    	{
+        	send_error_response(400, "No files found in request");
+        	return;
+   	 	}
+        // send_error_response(400, "bad request BOUNDARY");
+        // return;
+    
+    //std::string body = http_request.substr(header_end + 4);
     // Check if route has upload path configured
-    if (currentRoute->uploadPath.empty())
-    {
-        send_error_response(403, "Forbidden");
-        return;
-    }
-    std::vector<std::string> uploaded_files = parseMultipartBody(body, boundary, currentRoute->uploadPath);
-    if (uploaded_files.empty())
-    {
-        send_error_response(400, "No files found in request");
-        return;
-    }
+    // if (currentRoute->uploadPath.empty())
+    // {
+    //     send_error_response(403, "Forbidden");
+    //     return;
+    // }
+    // std::vector<std::string> uploaded_files = parseMultipartBody(body, boundary, currentRoute->uploadPath);
+    // if (uploaded_files.empty())
+    // {
+    //     send_error_response(400, "No files found in request");
+    //     return;
+    // }
     std::string responseBody = "<html><head><title>Upload Success</title></head><body>";
     responseBody += "<h1>Upload Successful</h1>";
     responseBody += "<p>Uploaded " + std::to_string(uploaded_files.size()) + " file(s):</p>";
@@ -797,6 +866,22 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
         "Content-Type: text/html\r\n"
         "Content-Length: " + std::to_string(responseBody.size()) + "\r\n"
         "\r\n" + responseBody;
+	}
+	else
+	{ 
+	std::string responseBody = "OK";
+    response =
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/plain\r\n"
+        "Content-Length: " + std::to_string(responseBody.size()) + "\r\n"
+        "\r\n" + responseBody;
+	
+	}
+
+	std::cerr << "Content-Length: " << content_length << std::endl;
+	std::cerr << "Boundary: '" << boundary << "'" << std::endl;
+	std::cerr << "Body size received: " << body.size() << std::endl;
+	std::cerr << "First 100 chars of body: " << body.substr(0, 100) << std::endl;
 }
 
 std::vector<std::string> ParseHTTP::parseMultipartBody(const std::string& body, const std::string& boundary, const std::string& uploadPath)
