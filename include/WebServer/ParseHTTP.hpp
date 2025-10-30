@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/08/29 18:49:16 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/27 18:34:40 by diwang        ########   odam.nl         */
+/*   Updated: 2025/10/30 15:00:26 by eandela       ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,13 +52,14 @@ class ParseHTTP
 		const RouteConfig *findRoute(const std::string &path);
 		bool methodInConfig(const std::string &method, const RouteConfig *route);
 
+		void handleHEAD();
 		void handleGET();
 		void handlePOST(const std::string &http_request, size_t line_end);
 		void handleDELETE();
 		void handleCGI();
 		std::string executeCGI(const std::string& script_path, const std::string& query_string);
 		std::vector<std::string> parseMultipartBody(const std::string &body, const std::string &boundary, const std::string &uploadPath);
-		void error_response(int status_code, const std::string &message);
+		void send_error_response(int status_code, const std::string &message);
 		
 
 };

@@ -92,10 +92,12 @@ void Client::buildResponse()
     // _response += "\r\n";
     // _response += "Hello, world!";
 
+	std::cerr << _request << std::endl;
 	ParseHTTP parser;
 	parser.setClient(this);
 	parser.setConfig(getServerConfig());
 	parser.parse_http_request();
+
 
 	setResponse(parser.getResponse());
 }
