@@ -11,6 +11,7 @@ struct RouteConfig {
     std::string cgiPath;
     std::string cgiExtension;
     std::string redirectTo;
+	std::string maxBodySize;
 };
 
 struct ServerConfig {

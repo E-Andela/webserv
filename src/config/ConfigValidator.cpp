@@ -82,7 +82,7 @@ static void validateServerDirective(const Directive& d, bool& hasListen, bool& h
 /* valid Location directives */
 static const std::set<std::string> locationDirectives = {
     "methods", "upload_path", "return",
-    "cgi_path", "cgi_extension"
+    "cgi_path", "cgi_extension", "client_max_body_size"
 };
 
 static void validateLocationDirective(const Directive& d) {

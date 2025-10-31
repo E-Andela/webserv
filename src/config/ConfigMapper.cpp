@@ -41,6 +41,7 @@ static RouteConfig mapRoute(const Block& block) {
     route.redirectTo = getDirectiveArgs(block, "return").size() == 2
                        ? getDirectiveArgs(block, "return")[1] : "";
 
+	route.maxBodySize = getDirectiveArg(block, "client_max_body_size");
     return route;
 }
 
