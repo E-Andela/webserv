@@ -29,6 +29,48 @@ std::string Client::getRequest() const
 	return _request;
 }
 
+void Client::readChunkedBody()
+{
+	size_t headerEnd = _request.find("\r\n\r\n");
+	std::string bodyPart = _request.substr(headerEnd + 4);
+
+	while (true)
+	{
+		if (_readingChunkSize)
+		{
+			size_t pos = bodyPart.find("\r\n");
+			if (pos == std::string::npos)
+				break;
+			
+			std::string sizeStr = bodyPart.substr(0, pos);
+			_chunkSize = std::strtoul(sizeStr.c_str(), NULL, 16);
+			bodyPart.erase(0, pos + 2);
+
+			if (_chunkSize == 0)
+			{
+				size_t endChunk = bodyPart.find("\r\n");
+				if (endChunk != std::string::npos)
+				{
+					_requestComplete = true;
+				}
+				break;
+			}
+
+			_readingChunkSize = false;
+		}
+		if (!_readingChunkSize)
+		{
+			if (bodyPart.size() < _chunkSize + 2)
+				break;
+
+			_body.append(bodyPart, 0, _chunkSize);
+			bodyPart.erase(0, _chunkSize + 2);
+
+			_readingChunkSize = true;
+		}
+	}
+}
+
 /**
  * @brief Reads data from the client socket and builds the HTTP request.
  *
@@ -66,17 +108,40 @@ void Client::buildRequest()
 			{
 				_contentLength = std::stoi(headers.substr(pos + 15));
 			}
+			else
+			{
+				pos = headers.find("Transfer-Encoding: chunked");
+				if (pos != std::string::npos)
+				{
+					_chunkedTransfer = true;
+				}
+			}
 		}
 	}
 	if (_headersComplete)
 	{
-		size_t headerEnd = _request.find("\r\n\r\n");
-		size_t bodySize = _request.size() - (headerEnd + 4);
-
-		if (bodySize >= _contentLength)
+		if (!_chunkedTransfer)
 		{
-			_requestComplete = true;
+			size_t headerEnd = _request.find("\r\n\r\n");
+			size_t bodySize = _request.size() - (headerEnd + 4);
+
+			if (bodySize >= _contentLength)
+			{
+				std::cout << "Client::buildRequest() - Request complete" << std::endl;
+				_requestComplete = true;
+			}
 		}
+		else
+		{
+			// Handle chunked transfer encoding
+			readChunkedBody();
+			if (_requestComplete)
+			{
+				size_t headerEnd = _request.find("\r\n\r\n");
+				_request.replace(headerEnd + 4, _body.size(), _body);
+			}
+		}
+		
 	}
 }
 
@@ -117,12 +182,16 @@ void Client::reset()
 {
 	_response.clear();
 	_request.clear();
+	_body.clear();
 	_requestComplete = false;
 	_responseComplete = false;
 	_headersComplete = false;
 	_responseBuilt = false;
+	_chunkedTransfer = false;
+	_readingChunkSize = true;
 	_contentLength = 0;
 	_bytesSent = 0;
+	_chunkSize = 0;
 }
 
 ServerConfig* Client::getConfig() const

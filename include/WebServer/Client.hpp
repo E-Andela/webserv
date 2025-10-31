@@ -11,13 +11,18 @@ private:
 	ServerConfig* _config {};
 	std::string _request {};
 	std::string _response {};
+	std::string _body {};
 	bool	_requestComplete {false};
 	bool	_responseComplete {false};
 	bool	_headersComplete {false};
 	bool	_responseBuilt {false};
+	bool	_chunkedTransfer {false};
+	bool	_readingChunkSize {true};
 	size_t _bytesSent {0};
 	size_t	_contentLength {0};
+	size_t	_chunkSize {0};
 	
+	void readChunkedBody();
 
 public:
 	Client(int fd, ServerConfig* config);
