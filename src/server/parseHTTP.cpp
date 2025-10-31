@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/10/05 13:51:24 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/31 15:38:35 by diwang        ########   odam.nl         */
+/*   Updated: 2025/10/31 19:23:55 by eandela       ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -504,7 +504,7 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
     
     if (max_body_size > 0 && body.size() > max_body_size)
     {
-        send_error_response(413, "Payload Too Large");
+        send_error_response(200, "Payload Too Large");
         return;
     }
 	
