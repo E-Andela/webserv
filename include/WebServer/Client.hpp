@@ -5,8 +5,11 @@
 # include "Config/ServerConfig.hpp"
 # include "ParseHTTP.hpp"
 
+
 class Client
 {
+
+	friend class ParseHTTP;
 private:
 	int _fd {};
 	ServerConfig* _config {};

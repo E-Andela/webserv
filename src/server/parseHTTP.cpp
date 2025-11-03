@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/10/05 13:51:24 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/31 19:23:55 by eandela       ########   odam.nl         */
+/*   Updated: 2025/11/03 19:02:29 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -182,21 +182,37 @@ const RouteConfig* ParseHTTP::findRoute(const std::string &path)
 	return bestMatch;
 }
 
+// bool ParseHTTP::methodInConfig(const std::string &method, const RouteConfig *route)
+// {
+	
+// 	if (!route)
+// 		return false;
+// 	for (const auto &allowed : route->methods)
+// 	{
+// 		if (allowed == method)
+// 			return true;
+// 	}
+// 	return false;
+// }
+
+
 bool ParseHTTP::methodInConfig(const std::string &method, const RouteConfig *route)
 {
-	
-	if (!route)
-		return false;
-	for (const auto &allowed : route->methods)
-	{
-		if (allowed == method)
-			return true;
-	}
-	return false;
+    if (!route)
+        return false;
+    
+    // Debug: print what methods are actually allowed for this route
+    std::cout << "Looking for method: " << method << std::endl;
+    std::cout << "Allowed methods for this route: ";
+    for (const auto &allowed : route->methods)
+    {
+        std::cout << allowed << " ";
+        if (allowed == method)
+            return true;
+    }
+    std::cout << std::endl;
+    return false;
 }
-
-
-
 
 void ParseHTTP::handleHEAD()
 {
@@ -475,38 +491,38 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
 
 	std::string body = http_request.substr(header_end + 4);
 
-	size_t max_body_size = 0;
+	// size_t max_body_size = 0;
     
-    // Try route-specific limit first
-    if (!currentRoute->maxBodySize.empty())
-    {
-        try {
-            max_body_size = std::stoul(currentRoute->maxBodySize);
-            std::cerr << "Using route maxBodySize: " << max_body_size << std::endl;
-        } catch (...) {
-            std::cerr << "ERROR: Invalid route maxBodySize: '" << currentRoute->maxBodySize << "'" << std::endl;
-        }
-    }
+    // // Try route-specific limit first
+    // if (!currentRoute->maxBodySize.empty())
+    // {
+    //     try {
+    //         max_body_size = std::stoul(currentRoute->maxBodySize);
+    //         std::cerr << "Using route maxBodySize: " << max_body_size << std::endl;
+    //     } catch (...) {
+    //         std::cerr << "ERROR: Invalid route maxBodySize: '" << currentRoute->maxBodySize << "'" << std::endl;
+    //     }
+    // }
     
-    // Fall back to server limit
-    if (max_body_size == 0 && !config->bodyLimit.empty())
-    {
-        try {
-            max_body_size = std::stoul(config->bodyLimit);
-            std::cerr << "Using server bodyLimit: " << max_body_size << std::endl;
-        } catch (...) {
-            std::cerr << "ERROR: Invalid server bodyLimit: '" << config->bodyLimit << "'" << std::endl;
-        }
-    }
+    // // Fall back to server limit
+    // if (max_body_size == 0 && !config->bodyLimit.empty())
+    // {
+    //     try {
+    //         max_body_size = std::stoul(config->bodyLimit);
+    //         std::cerr << "Using server bodyLimit: " << max_body_size << std::endl;
+    //     } catch (...) {
+    //         std::cerr << "ERROR: Invalid server bodyLimit: '" << config->bodyLimit << "'" << std::endl;
+    //     }
+    // }
     
-    std::cerr << "Final max_body_size: " << max_body_size << std::endl;
-    std::cerr << "Body size: " << body.size() << std::endl;
+    // std::cerr << "Final max_body_size: " << max_body_size << std::endl;
+    // std::cerr << "Body size: " << body.size() << std::endl;
     
-    if (max_body_size > 0 && body.size() > max_body_size)
-    {
-        send_error_response(200, "Payload Too Large");
-        return;
-    }
+    // if (max_body_size > 0 && body.size() > max_body_size)
+    // {
+    //     send_error_response(200, "Payload Too Large");
+    //     return;
+    // }
 	
 	std::vector<std::string> uploaded_files;
 
@@ -536,7 +552,17 @@ void ParseHTTP::handlePOST(const std::string& http_request, size_t line_end)
         "Content-Length: " + std::to_string(responseBody.size()) + "\r\n"
         "\r\n" + responseBody;
 	}
-	
+	else
+	{
+    	// Handle regular POST (non-file-upload)
+    	std::string responseBody = "<html><body><h1>POST received</h1><p>Body length: " 
+                                + std::to_string(body.size()) + "</p></body></html>";
+		response =
+			"HTTP/1.1 200 OK\r\n"
+			"Content-Type: text/html\r\n"
+			"Content-Length: " + std::to_string(responseBody.size()) + "\r\n"
+			"\r\n" + responseBody;
+	}
 }
 
 
@@ -695,7 +721,7 @@ void ParseHTTP::send_error_response(int status_code, const std::string& message)
 
 
 // TESTING TO UNDERSTAND FUNCTIONALALITY//
-void ParseHTTP::handleCGI()
+/*void ParseHTTP::handleCGI()
 {
 	std::cerr << "=== HANDLE CGI ===" << std::endl;
 	std::cerr << "Path: '" << path << "'" << std::endl;
@@ -707,23 +733,6 @@ void ParseHTTP::handleCGI()
 		return;
 	}
 	
-	// // Build script path
-	// std::string script_path = currentRoute->cgiPath + path.substr(currentRoute->path.length());
-	// std::cerr << "Script path: '" << script_path << "'" << std::endl;
-	
-	// // Check if file exists
-	// if (access(script_path.c_str(), F_OK) != 0)
-	// {
-	// 	send_error_response(404, "CGI script not found");
-	// 	return;
-	// }
-	
-	// // Check if executable
-	// if (access(script_path.c_str(), X_OK) != 0)
-	// {
-	// 	send_error_response(403, "CGI script not executable");
-	// 	return;
-	// }
 	std::string cgi_executable = currentRoute->cgiPath;
 
 	std::cerr << "CGI executable: '" << cgi_executable << "'" << std::endl;
@@ -745,18 +754,7 @@ void ParseHTTP::handleCGI()
 
 	// Execute CGI script - pass the REQUEST path as an argument or env var
 	std::string cgi_output = executeCGI(cgi_executable, query_string);
-		
-	// Parse query string if present
-	// std::string query_string;
-	// size_t query_pos = path.find('?');
-	// if (query_pos != std::string::npos)
-	// {
-	// 	query_string = path.substr(query_pos + 1);
-	// }
 	
-	// // Execute CGI script
-	// std::string cgi_output = executeCGI(script_path, query_string);
-
 	std::cerr << "=== CGI OUTPUT ===" << std::endl;
 	std::cerr << "Output length: " << cgi_output.size() << std::endl;
 	std::cerr << "Output content: '" << cgi_output << "'" << std::endl;
@@ -768,29 +766,44 @@ void ParseHTTP::handleCGI()
 		return;
 	}
 	
-	// Parse CGI output (headers + body)
-	size_t header_end = cgi_output.find("\r\n\r\n");
-	if (header_end == std::string::npos)
-		header_end = cgi_output.find("\n\n");
-	
-	if (header_end != std::string::npos)
-	{
-		// CGI script provided headers
-		response = "HTTP/1.1 200 OK\r\n" + cgi_output;
-	}
-	else
-	{
-		// No headers from CGI, add default
-		response = 
-			"HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/html\r\n"
-			"Content-Length: " + std::to_string(cgi_output.size()) + "\r\n"
-			"\r\n" +
-			cgi_output;
-	}
+	// Check if CGI returned a Status header
+std::string status_line = "200 OK";  // Default
+size_t status_pos = cgi_output.find("Status:");
+
+if (status_pos != std::string::npos)
+{
+    // Find the end of the Status line
+    size_t line_end = cgi_output.find("\r\n", status_pos);
+    if (line_end == std::string::npos)
+        line_end = cgi_output.find("\n", status_pos);
+    
+    if (line_end != std::string::npos)
+    {
+        // Extract status value (skip "Status: ")
+        status_line = cgi_output.substr(status_pos + 8, line_end - (status_pos + 8));
+        
+        // Remove the entire Status line including the line ending
+        // If it's \r\n, remove both. If it's just \n, remove that.
+        size_t chars_to_remove = line_end - status_pos;
+        if (cgi_output[line_end] == '\r' && line_end + 1 < cgi_output.size() && cgi_output[line_end + 1] == '\n')
+            chars_to_remove += 2; // Remove \r\n
+        else if (cgi_output[line_end] == '\n')
+            chars_to_remove += 1; // Remove \n
+            
+        cgi_output.erase(status_pos, chars_to_remove);
+    }
+}
+std::cerr << "=== AFTER STATUS REMOVAL ===" << std::endl;
+std::cerr << "CGI output length: " << cgi_output.size() << std::endl;
+std::cerr << "First 200 chars: '" << cgi_output.substr(0, 200) << "'" << std::endl;
+// Build final response
+response = "HTTP/1.1 " + status_line + "\r\n" + cgi_output;
+	// Build final response
+	response = "HTTP/1.1 " + status_line + "\r\n" + cgi_output;
 	
 	std::cerr << "=== END HANDLE CGI ===" << std::endl;
 }
+	
 
 std::string ParseHTTP::executeCGI(const std::string& script_path, const std::string& query_string)
 {
@@ -898,247 +911,205 @@ std::string ParseHTTP::executeCGI(const std::string& script_path, const std::str
             size_t header_end = cgi_output.find("\r\n\r\n");
             std::string body = header_end != std::string::npos ? cgi_output.substr(header_end + 4) : "";
             cgi_output.insert(header_end, ("\r\nContent-Length: " + std::to_string(body.size())));
+
+			
         }
+
+		if (cgi_output.find("Content-Length:") == std::string::npos) {
+    size_t header_end = cgi_output.find("\r\n\r\n");
+    if (header_end != std::string::npos) {
+        std::string body = cgi_output.substr(header_end + 4);
+        std::string content_length_header = "Content-Length: " + std::to_string(body.size()) + "\r\n";
+        // Insert BEFORE the blank line (at header_end, not with extra \r\n)
+        cgi_output.insert(header_end, content_length_header);
+    }
+}
 
         return cgi_output;
     }
 
     return "";
+}*/
+
+void ParseHTTP::handleCGI()
+{
+    std::cerr << "=== HANDLE CGI ===" << std::endl;
+    std::cerr << "Path: '" << path << "'" << std::endl;
+
+    if (currentRoute->cgiPath.empty()) {
+        send_error_response(500, "CGI not configured for this route");
+        return;
+    }
+
+    std::string cgi_executable = currentRoute->cgiPath;
+    if (access(cgi_executable.c_str(), X_OK) != 0) {
+        send_error_response(500, "CGI executable not found or not executable");
+        return;
+    }
+
+    // Parse query string
+    std::string query_string;
+    size_t query_pos = path.find('?');
+    if (query_pos != std::string::npos)
+        query_string = path.substr(query_pos + 1);
+
+    // Execute CGI, stream POST body if needed
+    std::string cgi_output = executeCGI(cgi_executable, query_string);
+
+    if (cgi_output.empty()) {
+        send_error_response(500, "CGI script failed");
+        return;
+    }
+
+    // Handle Status header from CGI
+    std::string status_line = "200 OK";
+    size_t status_pos = cgi_output.find("Status:");
+    if (status_pos != std::string::npos) {
+        size_t line_end = cgi_output.find("\r\n", status_pos);
+        if (line_end == std::string::npos)
+            line_end = cgi_output.find("\n", status_pos);
+
+        if (line_end != std::string::npos) {
+            status_line = cgi_output.substr(status_pos + 8, line_end - (status_pos + 8));
+
+            size_t chars_to_remove = line_end - status_pos;
+            if (cgi_output[line_end] == '\r' && line_end + 1 < cgi_output.size() && cgi_output[line_end + 1] == '\n')
+                chars_to_remove += 2;
+            else if (cgi_output[line_end] == '\n')
+                chars_to_remove += 1;
+
+            cgi_output.erase(status_pos, chars_to_remove);
+        }
+    }
+
+	std::cerr << "=== AFTER STATUS REMOVAL ===" << std::endl;
+    std::cerr << "CGI output length: " << cgi_output.size() << std::endl;
+    std::cerr << "First 200 chars: '" << cgi_output.substr(0, 200) << "'" << std::endl;
+
+	
+
+
+    // Build final response
+    response = "HTTP/1.1 " + status_line + "\r\n" + cgi_output;
+	
+    std::cerr << "=== END HANDLE CGI ===" << std::endl;
 }
 
-//TESTING TO UNDERSTAND FUNCTIONALALITY//
-// std::string ParseHTTP::executeCGI(const std::string& script_path, const std::string& query_string)
-// {
-// 	int fd[2];
-// 	if (pipe(fd) == -1)
-// 	{
-// 		std::cerr << "Failed to create pipe" << std::endl;
-// 		return "";
-// 	}
-	
-// 	pid_t pid = fork();
-	
-// 	if (pid == -1)
-// 	{
-// 		std::cerr << "Failed to fork" << std::endl;
-// 		close(fd[0]);
-// 		close(fd[1]);
-// 		return "";
-// 	}
-	
-// 	if (pid == 0)
-// 	{
-// 		// Child process
-// 		close(fd[0]); // Close read end
-		
-// 		// Redirect stdout to pipe
-// 		dup2(fd[1], STDOUT_FILENO);
-// 		close(fd[1]);
-		
-// 		// Build environment variables as array
-// 		std::string env_method = "REQUEST_METHOD=" + method;
-// 		std::string env_query = "QUERY_STRING=" + query_string;
-// 		std::string env_protocol = "SERVER_PROTOCOL=HTTP/1.1";  
-// 		std::string env_length = "CONTENT_LENGTH=0";
-// 		std::string env_script = "SCRIPT_FILENAME=" + script_path;
-// 		 std::string env_path = "PATH_INFO=" + path;  // ← ADD THIS!
-// 		std::string env_redirect = "REDIRECT_STATUS=200";
-		
-// 		// Create char* array for environment
-// 		char* envp[] = 
-// 		{
-// 			const_cast<char*>(env_method.c_str()),
-// 			const_cast<char*>(env_query.c_str()),
-// 			const_cast<char*>(env_protocol.c_str()),
-// 			const_cast<char*>(env_length.c_str()),
-// 			const_cast<char*>(env_script.c_str()),
-// 			const_cast<char*>(env_path.c_str()),  
-// 			const_cast<char*>(env_redirect.c_str()),
-// 			NULL
-// 		};
-		
-// 		// Determine interpreter based on extension
-// 		std::string interpreter;
-// 		if (script_path.find(".py") != std::string::npos)
-// 			interpreter = "/usr/bin/python3";
-// 		else if (script_path.find(".php") != std::string::npos)
-// 			interpreter = "/usr/bin/php-cgi";
-// 		else if (script_path.find(".sh") != std::string::npos)
-// 			interpreter = "/bin/bash";
-// 		else
-// 			interpreter = script_path; // Assume it's executable itself
-		
-// 		// Execute script
-// 		char* argv[] = 
-// 		{
-// 			const_cast<char*>(interpreter.c_str()),
-// 			const_cast<char*>(script_path.c_str()),
-// 			NULL
-// 		};
-		
-// 		execve(interpreter.c_str(), argv, envp);
-		
-// 		// If execve fails
-// 		std::cerr << "execve failed" << std::endl;
-// 		exit(1);
-// 	}
-// 	else
-// 	{
-// 		// Parent process
-// 		close(fd[1]); // Close write end
-		
-// 		// Read output from child
-// 		std::string output;
-// 		char buffer[4096];
-// 		ssize_t bytes_read;
-		
-// 		while ((bytes_read = read(fd[0], buffer, sizeof(buffer))) > 0)
-// 		{
-// 			output.append(buffer, bytes_read);
-// 		}
-		
-// 		close(fd[0]);
-		
-// 		// Wait for child to finish
-// 		int status;
-// 		waitpid(pid, &status, 0);
-		
-// 		if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-// 		{
-// 			std::cerr << "CGI script executed successfully" << std::endl;
-// 			return output;
-// 		}
-// 		else
-// 		{
-// 			std::cerr << "CGI script failed with status: " << WEXITSTATUS(status) << std::endl;
-// 			return "";
-// 		}
-// 	}
-	
-// 	return "";
-// }
 
-// std::string ParseHTTP::executeCGI(const std::string& script_path, const std::string& query_string)
-// {
-//     //Get POST body if this is a POST request
-//     std::string post_body;
-//     if (method == "POST")
-//     {
-//         std::string http_request = client->getRequest();
-//         size_t header_end = http_request.find("\r\n\r\n");
-//         if (header_end != std::string::npos)
-//         {
-//             post_body = http_request.substr(header_end + 4);
-//         }
-//     }
-	
-  
-//     int pipe_in[2];   // For stdin (POST body)
-//     int pipe_out[2];  // For stdout (CGI output)
-    
-//     if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1)
-//     {
-//         std::cerr << "Failed to create pipes" << std::endl;
-//         return "";
-//     }
-    
-//     pid_t pid = fork();
-//     if (pid == -1)
-//     {
-//         std::cerr << "Failed to fork" << std::endl;
-//         close(pipe_in[0]); close(pipe_in[1]);
-//         close(pipe_out[0]); close(pipe_out[1]);
-//         return "";
-//     }
-    
-//     if (pid == 0)
-//     {
-//         // Child process
-//         close(pipe_in[1]);  // Close write end of input
-//         close(pipe_out[0]); // Close read end of output
-        
-//         // Redirect stdin and stdout
-//         dup2(pipe_in[0], STDIN_FILENO);
-//         dup2(pipe_out[1], STDOUT_FILENO);
-        
-//         close(pipe_in[0]);
-//         close(pipe_out[1]);
-        
-//         // Build environment variables
-//         std::string env_method = "REQUEST_METHOD=" + method;
-//         std::string env_query = "QUERY_STRING=" + query_string;
-//         std::string env_protocol = "SERVER_PROTOCOL=HTTP/1.1";
-//         std::string env_length = "CONTENT_LENGTH=" + std::to_string(post_body.size());
-//         std::string env_type = "CONTENT_TYPE=application/x-www-form-urlencoded";
-//         std::string env_script = "SCRIPT_FILENAME=" + script_path;
-//         std::string env_path = "PATH_INFO=" + path;  // ← ADD THIS!
-//         std::string env_redirect = "REDIRECT_STATUS=200";
-        
-//         // Create char* array for environment
-//         char* envp[] = 
-//         {
-//             const_cast<char*>(env_method.c_str()),
-//             const_cast<char*>(env_query.c_str()),
-//             const_cast<char*>(env_protocol.c_str()),
-//             const_cast<char*>(env_length.c_str()),
-//             const_cast<char*>(env_type.c_str()),
-//             const_cast<char*>(env_script.c_str()),
-//             const_cast<char*>(env_path.c_str()),  // ← ADD THIS!
-//             const_cast<char*>(env_redirect.c_str()),
-//             NULL
-//         };
-        
-//         // Execute cgi_tester directly (no interpreter needed)
-//         char* argv[] = 
-//         {
-//             const_cast<char*>(script_path.c_str()),
-//             NULL  // ← Just the executable, no second argument!
-//         };
-        
-//         execve(script_path.c_str(), argv, envp);
-        
-//         std::cerr << "execve failed" << std::endl;
-//         exit(1);
-//     }
-//     else
-//     {
-//         // Parent process
-//         close(pipe_in[0]);  // Close read end of input
-//         close(pipe_out[1]); // Close write end of output
-        
-//         // Write POST body to CGI stdin
-//         if (!post_body.empty())
-//         {
-//             write(pipe_in[1], post_body.c_str(), post_body.size());
-//         }
-//         close(pipe_in[1]);  // Must close after writing!
-        
-//         // Read output from child
-//         std::string output;
-//         char buffer[4096];
-//         ssize_t bytes_read;
-//         while ((bytes_read = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
-//         {
-//             output.append(buffer, bytes_read);
-//         }
-//         close(pipe_out[0]);
-        
-//         // Wait for child to finish
-//         int status;
-//         waitpid(pid, &status, 0);
-        
-//         if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-//         {
-//             std::cerr << "CGI script executed successfully" << std::endl;
-//             return output;
-//         }
-//         else
-//         {
-//             std::cerr << "CGI script failed with status: " << WEXITSTATUS(status) << std::endl;
-//             return "";
-//         }
-//     }
-    
-//     return "";
-// }
+
+std::string ParseHTTP::executeCGI(const std::string& script_path, const std::string& query_string)
+{
+    int pipe_in[2];   // For CGI stdin
+    int pipe_out[2];  // For CGI stdout
+    if (pipe(pipe_in) == -1 || pipe(pipe_out) == -1) {
+        std::cerr << "Failed to create pipes" << std::endl;
+        return "";
+    }
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        std::cerr << "Failed to fork" << std::endl;
+        return "";
+    }
+
+    if (pid == 0) {
+        // Child
+        close(pipe_in[1]);
+        close(pipe_out[0]);
+        dup2(pipe_in[0], STDIN_FILENO);
+        dup2(pipe_out[1], STDOUT_FILENO);
+        close(pipe_in[0]);
+        close(pipe_out[1]);
+
+        // Build environment
+        std::string env_method = "REQUEST_METHOD=" + method;
+        std::string env_query = "QUERY_STRING=" + query_string;
+        std::string env_protocol = "SERVER_PROTOCOL=HTTP/1.1";
+        std::string env_length = "CONTENT_LENGTH=" + std::to_string(client->getRequest().size());
+        std::string env_type = "CONTENT_TYPE=application/x-www-form-urlencoded";
+        std::string env_script = "SCRIPT_FILENAME=" + script_path;
+        std::string env_path = "PATH_INFO=" + path;
+        std::string env_redirect = "REDIRECT_STATUS=200";
+
+        char* envp[] = {
+            const_cast<char*>(env_method.c_str()),
+            const_cast<char*>(env_query.c_str()),
+            const_cast<char*>(env_protocol.c_str()),
+            const_cast<char*>(env_length.c_str()),
+            const_cast<char*>(env_type.c_str()),
+            const_cast<char*>(env_script.c_str()),
+            const_cast<char*>(env_path.c_str()),
+            const_cast<char*>(env_redirect.c_str()),
+            NULL
+        };
+
+        char* argv[] = { const_cast<char*>(script_path.c_str()), NULL };
+        execve(script_path.c_str(), argv, envp);
+
+        std::cerr << "execve failed" << std::endl;
+        exit(1);
+    }
+    else {
+        // Parent
+        close(pipe_in[0]);
+        close(pipe_out[1]);
+
+        // Stream POST body to CGI
+        size_t header_end = client->getRequest().find("\r\n\r\n");
+        size_t bytes_sent = 0;
+
+        if (method == "POST") {
+            // Send already-read portion
+            if (header_end != std::string::npos) {
+                std::string initial_body = client->getRequest().substr(header_end + 4);
+                write(pipe_in[1], initial_body.c_str(), initial_body.size());
+                bytes_sent = initial_body.size();
+            }
+
+            // Stream the rest
+            while (bytes_sent < (client->getRequest().size()))
+			 {
+                char buf[8192];
+                int n = recv(client->_fd, buf, sizeof(buf), 0);
+                if (n <= 0) break;
+                write(pipe_in[1], buf, n);
+                bytes_sent += n;
+            }
+        }
+
+        close(pipe_in[1]); // EOF for CGI
+
+        // Read CGI output
+        std::string cgi_output;
+        char buffer[4096];
+        ssize_t n;
+        while ((n = read(pipe_out[0], buffer, sizeof(buffer))) > 0)
+            cgi_output.append(buffer, n);
+        close(pipe_out[0]);
+
+        int status;
+        waitpid(pid, &status, 0);
+
+        if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+            std::cerr << "CGI exited with status: " << WEXITSTATUS(status) << std::endl;
+
+        // Ensure CGI headers
+        // if (cgi_output.find("Status:") == std::string::npos)
+        //     cgi_output = "Status: 200 OK\r\n" + cgi_output;
+        if (cgi_output.find("Content-Type:") == std::string::npos)
+            cgi_output = "Content-Type: text/html\r\n" + cgi_output;
+        if (cgi_output.find("\r\n\r\n") == std::string::npos)
+            cgi_output += "\r\n\r\n";
+
+        // Add Content-Length
+        size_t header_end_pos = cgi_output.find("\r\n\r\n");
+        std::string body = (header_end_pos != std::string::npos) ? cgi_output.substr(header_end_pos + 4) : "";
+        if (cgi_output.find("Content-Length:") == std::string::npos) {
+            cgi_output.insert(header_end_pos, "\r\nContent-Length: " + std::to_string(body.size()));
+        }
+
+        return cgi_output;
+    }
+}
+
 

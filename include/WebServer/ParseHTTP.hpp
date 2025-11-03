@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/08/29 18:49:16 by diwang        #+#    #+#                 */
-/*   Updated: 2025/10/30 20:39:30 by diwang        ########   odam.nl         */
+/*   Updated: 2025/11/03 18:25:30 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,8 @@
 #include "Config/ServerConfig.hpp"
 #include "unistd.h"
 #include "sys/wait.h"
+#include <sys/types.h>
+#include <sys/socket.h>
 
 class Client;
 

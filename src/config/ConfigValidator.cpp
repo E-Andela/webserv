@@ -36,7 +36,7 @@ static const std::set<std::string> serverDirectives = {
 
 
 /* valid methods */
-static const std::set<std::string> validMethods = { "GET", "POST", "DELETE", "HEAD" };
+static const std::set<std::string> validMethods = {"HEAD", "GET", "POST", "DELETE"};
 
 /*
 validate presense of mandatory fields
