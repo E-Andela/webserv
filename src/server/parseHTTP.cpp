@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/10/05 13:51:24 by diwang        #+#    #+#                 */
-/*   Updated: 2025/11/03 19:02:29 by diwang        ########   odam.nl         */
+/*   Updated: 2025/11/04 16:42:55 by diwang        ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1021,11 +1021,19 @@ std::string ParseHTTP::executeCGI(const std::string& script_path, const std::str
         close(pipe_in[0]);
         close(pipe_out[1]);
 
+	    size_t body_length = 0;
+        std::string http_request = client->getRequest();
+        size_t header_end = http_request.find("\r\n\r\n");
+        
+        if (header_end != std::string::npos && method == "POST") {
+            body_length = http_request.size() - (header_end + 4);
+        }
+
         // Build environment
         std::string env_method = "REQUEST_METHOD=" + method;
         std::string env_query = "QUERY_STRING=" + query_string;
         std::string env_protocol = "SERVER_PROTOCOL=HTTP/1.1";
-        std::string env_length = "CONTENT_LENGTH=" + std::to_string(client->getRequest().size());
+         std::string env_length = "CONTENT_LENGTH=" + std::to_string(body_length);
         std::string env_type = "CONTENT_TYPE=application/x-www-form-urlencoded";
         std::string env_script = "SCRIPT_FILENAME=" + script_path;
         std::string env_path = "PATH_INFO=" + path;
@@ -1067,14 +1075,14 @@ std::string ParseHTTP::executeCGI(const std::string& script_path, const std::str
             }
 
             // Stream the rest
-            while (bytes_sent < (client->getRequest().size()))
-			 {
-                char buf[8192];
-                int n = recv(client->_fd, buf, sizeof(buf), 0);
-                if (n <= 0) break;
-                write(pipe_in[1], buf, n);
-                bytes_sent += n;
-            }
+            // while (bytes_sent < (client->getRequest().size()))
+			//  {
+            //     char buf[8192];
+            //     int n = recv(client->_fd, buf, sizeof(buf), 0);
+            //     if (n <= 0) break;
+            //     write(pipe_in[1], buf, n);
+            //     bytes_sent += n;
+            // }
         }
 
         close(pipe_in[1]); // EOF for CGI
