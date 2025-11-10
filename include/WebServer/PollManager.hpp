@@ -24,7 +24,8 @@ public:
 	void readClient(int fd);
 	void run();
 	void removeClient(int fd);
-
+	void handleAddQueue();
+	void handleRemoveQueue();
 };
 
 #endif

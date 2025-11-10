@@ -89,6 +89,47 @@ void PollManager::removeClient(int fd)
 	close(fd);
 }
 
+void PollManager::handleAddQueue()
+{
+	std::vector<std::pair<int, std::shared_ptr<Client>>> newFds;
+
+	for (auto it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		std::queue<pollfd> queue = it->second->getAddQueue();
+		while (!queue.empty())
+		{
+			newFds.push_back({queue.front().fd, it->second});
+			_pollfds.push_back(queue.front());
+			queue.pop();
+		}
+	}
+
+	for (size_t i = 0; i < newFds.size(); ++i)
+	{
+		_clients[newFds[i].first] = newFds[i].second;
+	}
+}
+// change to std::queue<int>& removeQueue = it->second->getRemoveQueue();
+void PollManager::handleRemoveQueue()
+{
+	std::vector<int> fdsToRemove;
+
+	for (auto it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		std::queue<int> removeQueue = it->second->getRemoveQueue();
+		while (!removeQueue.empty())
+		{
+			fdsToRemove.push_back(removeQueue.front());
+			removeQueue.pop();
+		}
+	}
+
+	for (size_t i = 0; i < fdsToRemove.size(); ++i)
+	{
+		removeClient(fdsToRemove[i]);
+	}
+}
+
 void PollManager::run()
 {
 	while (true)

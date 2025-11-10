@@ -224,25 +224,15 @@ ServerConfig* Client::getConfig() const
 	return _config;
 }
 
-// std::string Client::request()
-// {
-// 	std::cout << "Client::request() " << std::endl;
-// 	std::cout << "-------------------------------" << std::endl;
-// 	char buf[1024];
-// 	int res = recv(_fd, buf, sizeof(buf), 0);
-// 	if (res < 0)
-// 	{
-// 		throw std::runtime_error("Failed to receive data from client");
-// 	}
-// 	else if (res == 0)
-// 	{
-// 		return "";
-// 	}
-	
-// 	std::cout << "Received " << res << " bytes from client" << std::endl;
-// 	std::cout << "Buffer: " << buf << std::endl;
-// 	// _request = _buffer;
-// 	std::cout << "-------------------------------" << std::endl;
-// 	return _request;
-// }
+std::queue<pollfd> Client::getAddQueue()
+{
+	std::queue<pollfd> addQueue;
+	return addQueue;
+}
+
+std::queue<int> Client::getRemoveQueue()
+{
+	std::queue<int> removeQueue;
+	return removeQueue;
+}
 

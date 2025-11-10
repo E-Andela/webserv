@@ -4,6 +4,9 @@
 # include <string>
 # include "Config/ServerConfig.hpp"
 # include "ParseHTTP.hpp"
+# include "CGI.hpp"
+# include <queue>
+# include <poll.h>
 
 
 class Client
@@ -43,7 +46,8 @@ public:
 	int response(const std::string &response);
 	void reset();
 	ServerConfig* getConfig() const;
-
+	std::queue<pollfd> getAddQueue();
+	std::queue<int> getRemoveQueue();
 
 };
 
