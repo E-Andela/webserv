@@ -177,5 +177,7 @@ void PollManager::run()
 		{
 			break;
 		}
+		handleAddQueue();
+		handleRemoveQueue();
 	}
 }

@@ -7,6 +7,7 @@
 #include "Config/ConfigError.hpp"
 #include "Config/ConfigWrapper.hpp"
 #include "WebServer/ParseHTTP.hpp"
+#include "WebServer/CGI.hpp"
 #include <iostream>
 
 
@@ -33,4 +34,9 @@ int main(int argc, char* argv[])
         return 1;
     }
     return 0;
+}
+
+int main()
+{
+	
 }
