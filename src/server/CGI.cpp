@@ -37,6 +37,18 @@ CGI::CGI(std::string cgi_path, std::string script_path, std::string request, std
 	{
 		close(_pipeIn[0]);
 		close(_pipeOut[1]);
+
+		pollfd writePfd;
+		writePfd.fd = _pipeIn[1];
+		writePfd.events = POLLOUT;
+		writePfd.revents = 0;
+		_pendingFDs.push(writePfd);
+		
+		pollfd readPfd;
+		readPfd.fd = _pipeOut[0];
+		readPfd.events = POLLIN;
+		readPfd.revents = 0;
+		_pendingFDs.push(readPfd);
 	}
 }
 
@@ -157,7 +169,18 @@ void CGI::readPipe()
 	}
 	if (readBytes == 0)
 	{
+		_responseComplete = true;
 		close(_pipeOut[0]);
 		_removeFDs.push(_pipeOut[0]);
 	}
+}
+
+bool CGI::isResponseComplete() const
+{
+	return _responseComplete;
+}
+
+std::string CGI::getResponse() const
+{
+	return _response;
 }

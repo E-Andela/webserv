@@ -203,6 +203,16 @@ void Client::sendResponse()
 	}
 }
 
+void Client::cgiRead()
+{
+	_cgiProcess.readPipe();
+}
+
+void Client::cgiWrite()
+{
+	_cgiProcess.writePipe();
+}
+
 void Client::reset()
 {
 	_response.clear();
@@ -224,15 +234,23 @@ ServerConfig* Client::getConfig() const
 	return _config;
 }
 
-std::queue<pollfd> Client::getAddQueue()
+std::queue<pollfd>& Client::getAddQueue()
 {
-	std::queue<pollfd> addQueue;
-	return addQueue;
+	return _cgiProcess.getPendingFDs();
 }
 
-std::queue<int> Client::getRemoveQueue()
+std::queue<int>& Client::getRemoveQueue()
 {
-	std::queue<int> removeQueue;
-	return removeQueue;
+	return _cgiProcess.getRemoveFDs();
+}
+
+void Client::setCgiProcess(const CGI& cgi)
+{
+	_cgiProcess = cgi;
+}
+
+CGI& Client::getCgiProcess()
+{
+	return _cgiProcess;
 }
 

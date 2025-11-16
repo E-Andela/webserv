@@ -27,6 +27,7 @@ private:
 	std::queue<int> _removeFDs;
 	char** _env;
 	std::unordered_map<std::string, std::string> _envMap;
+	bool _responseComplete {false};
 
 	std::string getBodyFromRequest(const std::string& request);
 	std::string getHeadersFromRequest(const std::string& request);
@@ -40,6 +41,8 @@ public:
 	std::queue<int>& getRemoveFDs();
 	void writePipe();
 	void readPipe();
+	bool isResponseComplete() const;
+	std::string getResponse() const;
 };
 
 #endif

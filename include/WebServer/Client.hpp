@@ -14,6 +14,7 @@ class Client
 
 	friend class ParseHTTP;
 private:
+	CGI _cgiProcess;
 	int _fd {};
 	ServerConfig* _config {};
 	std::string _request {};
@@ -43,11 +44,15 @@ public:
 	void buildRequest();
 	void buildResponse();
 	void sendResponse();
+	void cgiRead();
+	void cgiWrite();
 	int response(const std::string &response);
 	void reset();
 	ServerConfig* getConfig() const;
-	std::queue<pollfd> getAddQueue();
-	std::queue<int> getRemoveQueue();
+	std::queue<pollfd>& getAddQueue();
+	std::queue<int>& getRemoveQueue();
+	void setCgiProcess(const CGI& cgi);
+	CGI& getCgiProcess();
 
 };
 

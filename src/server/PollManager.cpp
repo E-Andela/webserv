@@ -43,10 +43,23 @@ void PollManager::readClient(int fd)
 	if (it != _clients.end())
 	{
 		Client& client = *(it->second);
-		if (!client.getRequestComplete())
-			client.buildRequest();
-		if (client.getRequestComplete())
-			registerForWrite(fd);
+
+		if (client.getFd() == fd)
+		{
+			if (!client.getRequestComplete())
+				client.buildRequest();
+			if (client.getRequestComplete())
+				registerForWrite(fd);
+		}
+		else {
+			client.cgiRead();
+			if (client.getCgiProcess().isResponseComplete())
+			{
+				client.setResponse(client.getCgiProcess().getResponse());
+				registerForWrite(fd);
+			}
+		}
+
 	}
 }
 
@@ -163,12 +176,20 @@ void PollManager::run()
 					if (_clients.count(_pollfds[i].fd))
 					{
 						Client& client = *_clients[_pollfds[i].fd];
-						client.sendResponse();
-						if (client.getResponseComplete())
+						if (_pollfds[i].fd == client.getFd())
 						{
-							unregisterForWrite(_pollfds[i].fd);
-							client.reset();
+							client.sendResponse();
+							if (client.getResponseComplete())
+							{
+								unregisterForWrite(_pollfds[i].fd);
+								client.reset();
+							}
 						}
+						else
+						{
+							client.cgiWrite();
+						}
+						
 					}
 				}
 			}
