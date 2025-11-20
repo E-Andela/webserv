@@ -57,6 +57,11 @@ CGI::CGI(std::string cgi_path, std::string script_path, std::string request, std
 		readPfd.revents = 0;
 		_pendingFDs.push(readPfd);
 	}
+	_cgiActive = true;
+}
+
+CGI::CGI() : _cgiActive {false}
+{
 }
 
 std::string CGI::getBodyFromRequest(const std::string& request)
@@ -190,4 +195,9 @@ bool CGI::isResponseComplete() const
 std::string CGI::getResponse() const
 {
 	return _response;
+}
+
+bool CGI::isCgiActive() const
+{
+	return _cgiActive;
 }

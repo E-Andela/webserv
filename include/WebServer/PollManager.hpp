@@ -17,6 +17,8 @@ private:
 
 public:
 	void addListeningSocket(ListeningSocket* socket);
+	void unregisterForRead(int fd);
+	void registerForRead(int fd);
 	void registerForWrite(int fd);
 	void unregisterForWrite(int fd);
 	void addClient(const Client& client);

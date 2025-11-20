@@ -39,6 +39,7 @@ void PollManager::acceptConnection(int fd)
 
 void PollManager::readClient(int fd)
 {
+	std::cout << "PollManager::readClient() - Reading from client fd: " << fd << std::endl;
 	auto it = _clients.find(fd);
 	if (it != _clients.end())
 	{
@@ -53,13 +54,37 @@ void PollManager::readClient(int fd)
 		}
 		else {
 			client.cgiRead();
-			if (client.getCgiProcess()->isResponseComplete())
+			if (client.getCgiProcess().isResponseComplete())
 			{
-				client.setResponse(client.getCgiProcess()->getResponse());
+				client.setResponse(client.getCgiProcess().getResponse());
 				registerForWrite(fd);
 			}
 		}
 
+	}
+}
+
+void PollManager::unregisterForRead(int fd)
+{
+	for (size_t i = 0; i < _pollfds.size(); ++i)
+	{
+		if (_pollfds[i].fd == fd)
+		{
+			_pollfds[i].events &= ~POLLIN;
+			return;
+		}
+	}
+}
+
+void PollManager::registerForRead(int fd)
+{
+	for (size_t i = 0; i < _pollfds.size(); ++i)
+	{
+		if (_pollfds[i].fd == fd)
+		{
+			_pollfds[i].events |= POLLIN;
+			return;
+		}
 	}
 }
 
@@ -108,7 +133,7 @@ void PollManager::handleAddQueue()
 
 	for (auto it = _clients.begin(); it != _clients.end(); ++it)
 	{
-		if (it->second->getCgiProcess() != nullptr)
+		if (it->second->getCgiProcess().isCgiActive())
 		{
 			std::queue<pollfd> queue = it->second->getAddQueue();
 			while (!queue.empty())
@@ -132,7 +157,7 @@ void PollManager::handleRemoveQueue()
 
 	for (auto it = _clients.begin(); it != _clients.end(); ++it)
 	{
-		if (it->second->getCgiProcess() == nullptr)
+		if (it->second->getCgiProcess().isCgiActive() == false)
 			continue;
 		std::queue<int> removeQueue = it->second->getRemoveQueue();
 		while (!removeQueue.empty())

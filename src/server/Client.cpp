@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <stdexcept>
 #include <iostream>
+#include "WebServer/CGI.hpp"
 
 Client::Client(int fd, ServerConfig* config) : _fd {fd}, _config {config}, _requestComplete {false}, _responseComplete {false}
 {
@@ -153,6 +154,7 @@ void Client::buildRequest()
 
 void Client::buildResponse()
 {
+	std::cout << "Client::buildResponse()" << std::endl;
     // _response = "HTTP/1.1 200 OK\r\n";
     // _response += "Content-Length: 13\r\n";
     // _response += "Content-Type: text/plain\r\n";
@@ -169,15 +171,28 @@ void Client::buildResponse()
 		parser.setConfig(getConfig());
 		parser.parse_http_request();
 
-
-		setResponse(parser.getResponse());
-		_responseBuilt = true;
-		std::cout << "Response: " << std::endl;
-		std::cout << "-------------------------------" << std::endl;
-		std::cout << _response << std::endl;
-		std::cout << "-------------------------------" << std::endl;
+		if (!_cgiProcess.isCgiActive())
+		{
+			setResponse(parser.getResponse());
+			_responseBuilt = true;
+			std::cout << "Response: " << std::endl;
+			std::cout << "-------------------------------" << std::endl;
+			std::cout << _response << std::endl;
+			std::cout << "-------------------------------" << std::endl;
+		}
+		else
+		{
+			if (_cgiProcess.isResponseComplete())
+			{
+				setResponse(_cgiProcess.getResponse());
+				_responseBuilt = true;
+				std::cout << "Response: " << std::endl;
+				std::cout << "-------------------------------" << std::endl;
+				std::cout << _response << std::endl;
+				std::cout << "-------------------------------" << std::endl;
+			}
+		}
 	}
-
 }
 
 void Client::sendResponse()

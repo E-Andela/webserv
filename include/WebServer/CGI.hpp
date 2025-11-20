@@ -28,6 +28,7 @@ private:
 	char** _env;
 	std::unordered_map<std::string, std::string> _envMap;
 	bool _responseComplete {false};
+	bool _cgiActive {false};
 
 	std::string getBodyFromRequest(const std::string& request);
 	std::string getHeadersFromRequest(const std::string& request);
@@ -44,6 +45,7 @@ public:
 	void readPipe();
 	bool isResponseComplete() const;
 	std::string getResponse() const;
+	bool isCgiActive() const;
 };
 
 #endif
