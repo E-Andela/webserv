@@ -244,9 +244,14 @@ std::queue<int>& Client::getRemoveQueue()
 	return _cgiProcess.getRemoveFDs();
 }
 
-void Client::setCgiProcess(const CGI& cgi)
+void Client::setCgiProcess(CGI cgi)
 {
 	_cgiProcess = cgi;
+}
+
+void Client::createCgiProcess(std::string cgi_path, std::string script_path, std::string method, std::string query_string)
+{
+	_cgiProcess = CGI(cgi_path, script_path, _request, method, query_string);
 }
 
 CGI& Client::getCgiProcess()

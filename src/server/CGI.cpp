@@ -30,7 +30,14 @@ CGI::CGI(std::string cgi_path, std::string script_path, std::string request, std
 		close(_pipeIn[0]);
 		close(_pipeOut[1]);
 
-		execve(cgi_path.c_str(), NULL, _env);
+		char **argv = new char*[2];
+		argv[0] = new char[cgi_path.size() + 1];
+		std::strcpy(argv[0], cgi_path.c_str());
+		argv[1] = new char[script_path.size() + 1];
+		std::strcpy(argv[1], script_path.c_str());
+		argv[2] = NULL;
+
+		execve(cgi_path.c_str(), argv, _env);
 		exit(1); // execve failed
 	}
 	else

@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/10/05 13:51:24 by diwang        #+#    #+#                 */
-/*   Updated: 2025/11/04 16:42:55 by diwang        ########   odam.nl         */
+/*   Updated: 2025/11/20 15:20:15 by eandela       ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -933,67 +933,81 @@ std::string ParseHTTP::executeCGI(const std::string& script_path, const std::str
 
 void ParseHTTP::handleCGI()
 {
-    std::cerr << "=== HANDLE CGI ===" << std::endl;
-    std::cerr << "Path: '" << path << "'" << std::endl;
-
-    if (currentRoute->cgiPath.empty()) {
-        send_error_response(500, "CGI not configured for this route");
-        return;
-    }
-
-    std::string cgi_executable = currentRoute->cgiPath;
-    if (access(cgi_executable.c_str(), X_OK) != 0) {
-        send_error_response(500, "CGI executable not found or not executable");
-        return;
-    }
-
-    // Parse query string
-    std::string query_string;
-    size_t query_pos = path.find('?');
-    if (query_pos != std::string::npos)
-        query_string = path.substr(query_pos + 1);
-
-    // Execute CGI, stream POST body if needed
-    std::string cgi_output = executeCGI(cgi_executable, query_string);
-
-    if (cgi_output.empty()) {
-        send_error_response(500, "CGI script failed");
-        return;
-    }
-
-    // Handle Status header from CGI
-    std::string status_line = "200 OK";
-    size_t status_pos = cgi_output.find("Status:");
-    if (status_pos != std::string::npos) {
-        size_t line_end = cgi_output.find("\r\n", status_pos);
-        if (line_end == std::string::npos)
-            line_end = cgi_output.find("\n", status_pos);
-
-        if (line_end != std::string::npos) {
-            status_line = cgi_output.substr(status_pos + 8, line_end - (status_pos + 8));
-
-            size_t chars_to_remove = line_end - status_pos;
-            if (cgi_output[line_end] == '\r' && line_end + 1 < cgi_output.size() && cgi_output[line_end + 1] == '\n')
-                chars_to_remove += 2;
-            else if (cgi_output[line_end] == '\n')
-                chars_to_remove += 1;
-
-            cgi_output.erase(status_pos, chars_to_remove);
-        }
-    }
-
-	std::cerr << "=== AFTER STATUS REMOVAL ===" << std::endl;
-    std::cerr << "CGI output length: " << cgi_output.size() << std::endl;
-    std::cerr << "First 200 chars: '" << cgi_output.substr(0, 200) << "'" << std::endl;
-
 	
-
-
-    // Build final response
-    response = "HTTP/1.1 " + status_line + "\r\n" + cgi_output;
-	
-    std::cerr << "=== END HANDLE CGI ===" << std::endl;
+	std::string cgi_path = currentRoute->cgiPath;
+	std::string query_string;
+	size_t query_pos = path.find('?');
+	if (query_pos != std::string::npos)
+		query_string = path.substr(query_pos + 1);
+	else
+		query_string = "";
+	client->createCgiProcess(currentRoute->cgiPath, path, method, query_string);
+		
 }
+
+// void ParseHTTP::handleCGI()
+// {
+//     std::cerr << "=== HANDLE CGI ===" << std::endl;
+//     std::cerr << "Path: '" << path << "'" << std::endl;
+
+//     if (currentRoute->cgiPath.empty()) {
+//         send_error_response(500, "CGI not configured for this route");
+//         return;
+//     }
+
+//     std::string cgi_executable = currentRoute->cgiPath;
+//     if (access(cgi_executable.c_str(), X_OK) != 0) {
+//         send_error_response(500, "CGI executable not found or not executable");
+//         return;
+//     }
+
+//     // Parse query string
+//     std::string query_string;
+//     size_t query_pos = path.find('?');
+//     if (query_pos != std::string::npos)
+//         query_string = path.substr(query_pos + 1);
+
+//     // Execute CGI, stream POST body if needed
+//     std::string cgi_output = executeCGI(cgi_executable, query_string);
+
+//     if (cgi_output.empty()) {
+//         send_error_response(500, "CGI script failed");
+//         return;
+//     }
+
+//     // Handle Status header from CGI
+//     std::string status_line = "200 OK";
+//     size_t status_pos = cgi_output.find("Status:");
+//     if (status_pos != std::string::npos) {
+//         size_t line_end = cgi_output.find("\r\n", status_pos);
+//         if (line_end == std::string::npos)
+//             line_end = cgi_output.find("\n", status_pos);
+
+//         if (line_end != std::string::npos) {
+//             status_line = cgi_output.substr(status_pos + 8, line_end - (status_pos + 8));
+
+//             size_t chars_to_remove = line_end - status_pos;
+//             if (cgi_output[line_end] == '\r' && line_end + 1 < cgi_output.size() && cgi_output[line_end + 1] == '\n')
+//                 chars_to_remove += 2;
+//             else if (cgi_output[line_end] == '\n')
+//                 chars_to_remove += 1;
+
+//             cgi_output.erase(status_pos, chars_to_remove);
+//         }
+//     }
+
+// 	std::cerr << "=== AFTER STATUS REMOVAL ===" << std::endl;
+//     std::cerr << "CGI output length: " << cgi_output.size() << std::endl;
+//     std::cerr << "First 200 chars: '" << cgi_output.substr(0, 200) << "'" << std::endl;
+
+	
+
+
+//     // Build final response
+//     response = "HTTP/1.1 " + status_line + "\r\n" + cgi_output;
+	
+//     std::cerr << "=== END HANDLE CGI ===" << std::endl;
+// }
 
 
 

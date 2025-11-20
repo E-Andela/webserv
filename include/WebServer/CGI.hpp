@@ -37,6 +37,7 @@ private:
 
 public:
 	CGI(std::string cgi_path, std::string script_path, std::string request, std::string method, std::string query_string);
+	CGI();
 	std::queue<pollfd>& getPendingFDs();
 	std::queue<int>& getRemoveFDs();
 	void writePipe();
