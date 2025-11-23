@@ -3,45 +3,50 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cstring>
+#include <iostream>
+#include <sys/wait.h>
 
 CGI::CGI(std::string cgi_path, std::string script_path, std::string request, std::string method, std::string query_string)
 {
 	_body = getBodyFromRequest(request);
 	_headers = getHeadersFromRequest(request);
-
-	createEnvironmentMap(method, query_string);
-	_env = createCGIEnv();
 	if (pipe(_pipeIn) == -1 || pipe(_pipeOut) == -1)
 	{
 		throw std::runtime_error("Failed to create pipes");
 	}
-
-	pid_t pid = fork();
-	if (pid == -1)
+	
+	_pid = fork();
+	if (_pid == -1)
 	{
 		throw std::runtime_error("Failed to fork");
 	}
-	if (pid == 0)
+	if (_pid == 0)
 	{
+		script_path.insert(0, ".");
+		createEnvironmentMap(method, query_string);
+		_env = createCGIEnv();
+		std::cout << "Executing CGI: " << cgi_path << " " << script_path << std::endl;
 		close(_pipeIn[1]);
 		close(_pipeOut[0]);
 		dup2(_pipeIn[0], STDIN_FILENO);
 		dup2(_pipeOut[1], STDOUT_FILENO);
 		close(_pipeIn[0]);
 		close(_pipeOut[1]);
-
-		char **argv = new char*[2];
+		
+		char **argv = new char*[3];
 		argv[0] = new char[cgi_path.size() + 1];
 		std::strcpy(argv[0], cgi_path.c_str());
 		argv[1] = new char[script_path.size() + 1];
 		std::strcpy(argv[1], script_path.c_str());
 		argv[2] = NULL;
-
+		
 		execve(cgi_path.c_str(), argv, _env);
+		std::cerr << "CGI execve failed" << std::endl;
 		exit(1); // execve failed
 	}
 	else
 	{
+		std::cout << "CGI: Forked process with PID " << _pid << std::endl;
 		close(_pipeIn[0]);
 		close(_pipeOut[1]);
 
@@ -50,12 +55,14 @@ CGI::CGI(std::string cgi_path, std::string script_path, std::string request, std
 		writePfd.events = POLLOUT;
 		writePfd.revents = 0;
 		_pendingFDs.push(writePfd);
+		std::cout << "CGI: Added write fd " << writePfd.fd << " to pending FDs" << std::endl;
 		
 		pollfd readPfd;
 		readPfd.fd = _pipeOut[0];
 		readPfd.events = POLLIN;
 		readPfd.revents = 0;
 		_pendingFDs.push(readPfd);
+		std::cout << "CGI: Added read fd " << readPfd.fd << " to pending FDs" << std::endl;
 	}
 	_cgiActive = true;
 }
@@ -165,22 +172,38 @@ void CGI::writePipe()
 	_bytesWritten += written;
 	if (_bytesWritten >= _body.size())
 	{
+		std::cout << "CGI::writePipe(): Finished writing to CGI" << std::endl;
 		close(_pipeIn[1]);
+		std::cout << "CGI::writePipe(): Scheduling removal of fd " << _pipeIn[1] << std::endl;
+		_removeFDs.push(_pipeIn[1]);
 	}
-	_removeFDs.push(_pipeIn[1]);
 }
 
 void CGI::readPipe()
 {
 	char buffer[1024];
 	size_t readBytes = read(_pipeOut[0], buffer, sizeof(buffer));
+	std::cout << "CGI::readPipe(): Read " << readBytes << " bytes from CGI " << _pipeOut[0] << std::endl;
 	if (readBytes > 0)
 	{
 		_response.append(buffer, readBytes);
 		_bytesRead += readBytes;
+		std::cout << "PID: " << _pid << std::endl;
+		int status;
+		pid_t result = waitpid(_pid, &status, 0);
+		std::cout << "CGI::readPipe(): waitpid returned " << result << std::endl;
+		std::cout << "Buffer content: " << std::string(buffer, readBytes) << std::endl;
+		if (result == _pid)
+		{
+			close(_pipeOut[0]);
+			_responseComplete = true;
+			_removeFDs.push(_pipeOut[0]);
+			std::cout << "CGI::readPipe(): CGI process ended, scheduling removal of fd " << _pipeOut[0] << std::endl;
+		}
 	}
-	if (readBytes == 0)
+	else if (readBytes == 0)
 	{
+		std::cout << "CGI::readPipe(): Finished reading from CGI" << std::endl;
 		_responseComplete = true;
 		close(_pipeOut[0]);
 		_removeFDs.push(_pipeOut[0]);

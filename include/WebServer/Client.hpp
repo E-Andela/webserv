@@ -38,6 +38,7 @@ public:
 	int getFd() const;
 	bool getRequestComplete() const;
 	bool getResponseComplete() const;
+	bool getResponseBuilt() const;
 	std::string getRequest() const;
 	void setResponse(std::string response); 
 

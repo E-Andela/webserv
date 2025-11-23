@@ -6,7 +6,7 @@
 /*   By: diwang <diwang@student.42.fr>                +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2025/10/05 13:51:24 by diwang        #+#    #+#                 */
-/*   Updated: 2025/11/20 15:20:15 by eandela       ########   odam.nl         */
+/*   Updated: 2025/11/20 19:08:15 by eandela       ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -144,8 +144,6 @@ const RouteConfig* ParseHTTP::findRoute(const std::string &path)
 	if (!config)
 		return nullptr;
 
-	std::cerr << "=== FINDING ROUTE ===" << std::endl;
-
 	//initialize pointer BestMatch to null and longestmatch to 0
 	const RouteConfig *bestMatch = nullptr;
 	size_t longestMatch = 0;
@@ -171,7 +169,6 @@ const RouteConfig* ParseHTTP::findRoute(const std::string &path)
 				{
 					bestMatch = &route;
 					longestMatch = route_len;
-					std::cerr << " Match found: '" << route.path << "'" << std::endl;
 				}	
 			}		
 		}
@@ -202,8 +199,8 @@ bool ParseHTTP::methodInConfig(const std::string &method, const RouteConfig *rou
         return false;
     
     // Debug: print what methods are actually allowed for this route
-    std::cout << "Looking for method: " << method << std::endl;
-    std::cout << "Allowed methods for this route: ";
+    // std::cout << "Looking for method: " << method << std::endl;
+    // std::cout << "Allowed methods for this route: ";
     for (const auto &allowed : route->methods)
     {
         std::cout << allowed << " ";
@@ -941,6 +938,7 @@ void ParseHTTP::handleCGI()
 		query_string = path.substr(query_pos + 1);
 	else
 		query_string = "";
+	std::cout << "=== HANDLE CGI ===" << std::endl;
 	client->createCgiProcess(currentRoute->cgiPath, path, method, query_string);
 		
 }

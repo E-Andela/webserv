@@ -28,6 +28,7 @@ public:
 	void removeClient(int fd);
 	void handleAddQueue();
 	void handleRemoveQueue();
+	void printPollFDs();
 };
 
 #endif

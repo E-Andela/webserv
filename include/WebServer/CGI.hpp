@@ -29,6 +29,7 @@ private:
 	std::unordered_map<std::string, std::string> _envMap;
 	bool _responseComplete {false};
 	bool _cgiActive {false};
+	pid_t _pid;
 
 	std::string getBodyFromRequest(const std::string& request);
 	std::string getHeadersFromRequest(const std::string& request);
@@ -46,6 +47,7 @@ public:
 	bool isResponseComplete() const;
 	std::string getResponse() const;
 	bool isCgiActive() const;
+	pid_t getPid() const { return _pid; }
 };
 
 #endif

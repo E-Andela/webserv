@@ -25,6 +25,11 @@ bool Client::getResponseComplete() const
 	return _responseComplete;
 }
 
+bool Client::getResponseBuilt() const
+{
+	return _responseBuilt;
+}
+
 std::string Client::getRequest() const
 {
 	return _request;
@@ -33,6 +38,7 @@ std::string Client::getRequest() const
 void Client::setResponse(std::string response)
 {
 	_response = response;
+	_responseBuilt = true;
 }
 
 void Client::readChunkedBody()
@@ -133,13 +139,11 @@ void Client::buildRequest()
 
 			if (bodySize >= _contentLength)
 			{
-				std::cout << "Client::buildRequest() - Request complete" << std::endl;
 				_requestComplete = true;
 			}
 		}
 		else
 		{
-			// Handle chunked transfer encoding
 			readChunkedBody();
 			if (_requestComplete)
 			{
@@ -155,41 +159,27 @@ void Client::buildRequest()
 void Client::buildResponse()
 {
 	std::cout << "Client::buildResponse()" << std::endl;
-    // _response = "HTTP/1.1 200 OK\r\n";
-    // _response += "Content-Length: 13\r\n";
-    // _response += "Content-Type: text/plain\r\n";
-    // _response += "\r\n";
-    // _response += "Hello, world!";
-	// _responseBuilt = true;
-
-
 	if (!_responseBuilt)
 	{
-		std::cerr << _request << std::endl;
 		ParseHTTP parser;
 		parser.setClient(this);
 		parser.setConfig(getConfig());
 		parser.parse_http_request();
+		std::cout << "PID: " << _cgiProcess.getPid() << std::endl;
 
 		if (!_cgiProcess.isCgiActive())
 		{
+			std::cout << "Client::buildResponse(): response complete" << std::endl;
 			setResponse(parser.getResponse());
 			_responseBuilt = true;
-			std::cout << "Response: " << std::endl;
-			std::cout << "-------------------------------" << std::endl;
-			std::cout << _response << std::endl;
-			std::cout << "-------------------------------" << std::endl;
 		}
 		else
 		{
 			if (_cgiProcess.isResponseComplete())
 			{
+				std::cout << "Client::buildResponse(): CGI response complete" << std::endl;
 				setResponse(_cgiProcess.getResponse());
 				_responseBuilt = true;
-				std::cout << "Response: " << std::endl;
-				std::cout << "-------------------------------" << std::endl;
-				std::cout << _response << std::endl;
-				std::cout << "-------------------------------" << std::endl;
 			}
 		}
 	}
@@ -197,12 +187,10 @@ void Client::buildResponse()
 
 void Client::sendResponse()
 {
-	buildResponse();
+	std::cout << "Client::sendResponse()" << std::endl;
+	std::cout << "_responseBuilt: " << _responseBuilt << std::endl;
 	if (_responseBuilt)
 	{
-		std::cout << "Client::sendResponse()" << std::endl;
-		std::cout << "-------------------------------" << std::endl;
-
 		size_t sent = send(_fd, _response.c_str() + _bytesSent, _response.size() - _bytesSent, 0);
 		if (sent <= 0)
 		{
@@ -210,21 +198,23 @@ void Client::sendResponse()
 		}
 
 		_bytesSent += sent;
-
-		std::cout << "sent: " << sent << " bytes, total: " << _bytesSent << "/" << _response.size() << std::endl;
 		if (_bytesSent >= _response.size())
+		{
 			_responseComplete = true;
-		std::cout << "-------------------------------" << std::endl;
+			std::cout << "Client::sendResponse(): response complete" << std::endl;
+		}
 	}
 }
 
 void Client::cgiRead()
 {
+	std::cout << "Client::cgiRead()" << std::endl;
 	_cgiProcess.readPipe();
 }
 
 void Client::cgiWrite()
 {
+	std::cout << "Client::cgiWrite()" << std::endl;
 	_cgiProcess.writePipe();
 }
 

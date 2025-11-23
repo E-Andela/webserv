@@ -39,7 +39,7 @@ void PollManager::acceptConnection(int fd)
 
 void PollManager::readClient(int fd)
 {
-	std::cout << "PollManager::readClient() - Reading from client fd: " << fd << std::endl;
+	std::cout << "PollManager: readClient on fd " << fd << std::endl;
 	auto it = _clients.find(fd);
 	if (it != _clients.end())
 	{
@@ -50,22 +50,37 @@ void PollManager::readClient(int fd)
 			if (!client.getRequestComplete())
 				client.buildRequest();
 			if (client.getRequestComplete())
-				registerForWrite(fd);
+			{
+				client.buildResponse();
+				if (client.getResponseBuilt())
+				{
+					registerForWrite(fd);
+					// unregisterForRead(fd);
+				}
+
+				// if (!client.getCgiProcess().isCgiActive())
+				// 	registerForWrite(fd);
+				// unregisterForRead(fd);
+			}
 		}
 		else {
+			std::cout << "PollManager: readClient on CGI fd " << fd << std::endl;
+			std::cout << "PID: " << client.getCgiProcess().getPid() << std::endl;
 			client.cgiRead();
 			if (client.getCgiProcess().isResponseComplete())
 			{
+				std::cout << "PollManager: CGI response complete for fd " << fd << std::endl;
 				client.setResponse(client.getCgiProcess().getResponse());
-				registerForWrite(fd);
+				registerForWrite(client.getFd());
+				unregisterForRead(fd);
 			}
 		}
-
 	}
 }
 
 void PollManager::unregisterForRead(int fd)
 {
+	std::cout << "PollManager: Unregistering for POLLIN on fd " << fd << std::endl;
 	for (size_t i = 0; i < _pollfds.size(); ++i)
 	{
 		if (_pollfds[i].fd == fd)
@@ -78,6 +93,7 @@ void PollManager::unregisterForRead(int fd)
 
 void PollManager::registerForRead(int fd)
 {
+	std::cout << "PollManager: Registering for POLLIN on fd " << fd << std::endl;
 	for (size_t i = 0; i < _pollfds.size(); ++i)
 	{
 		if (_pollfds[i].fd == fd)
@@ -90,6 +106,7 @@ void PollManager::registerForRead(int fd)
 
 void PollManager::registerForWrite(int fd)
 {
+	std::cout << "PollManager: Registering for POLLOUT on fd " << fd << std::endl;
 	for (size_t i = 0; i < _pollfds.size(); ++i)
 	{
 		if (_pollfds[i].fd == fd)
@@ -102,6 +119,7 @@ void PollManager::registerForWrite(int fd)
 
 void PollManager::unregisterForWrite(int fd)
 {
+	std::cout << "PollManager: Unregistering for POLLOUT on fd " << fd << std::endl;
 	for (size_t i = 0; i < _pollfds.size(); ++i)
 	{
 		if (_pollfds[i].fd == fd)
@@ -135,7 +153,7 @@ void PollManager::handleAddQueue()
 	{
 		if (it->second->getCgiProcess().isCgiActive())
 		{
-			std::queue<pollfd> queue = it->second->getAddQueue();
+			std::queue<pollfd>& queue = it->second->getAddQueue();
 			while (!queue.empty())
 			{
 				newFds.push_back({queue.front().fd, it->second});
@@ -159,17 +177,28 @@ void PollManager::handleRemoveQueue()
 	{
 		if (it->second->getCgiProcess().isCgiActive() == false)
 			continue;
-		std::queue<int> removeQueue = it->second->getRemoveQueue();
+		std::queue<int>& removeQueue = it->second->getRemoveQueue();
 		while (!removeQueue.empty())
 		{
 			fdsToRemove.push_back(removeQueue.front());
+			std::cout << "PollManager: Scheduling removal of fd " << removeQueue.front() << std::endl;
 			removeQueue.pop();
 		}
 	}
 
 	for (size_t i = 0; i < fdsToRemove.size(); ++i)
 	{
+		std::cout << "PollManager: Removing fd " << fdsToRemove[i] << std::endl;
 		removeClient(fdsToRemove[i]);
+	}
+}
+
+void PollManager::printPollFDs()
+{
+	std::cout << "Current pollfds:" << std::endl;
+	for (size_t i = 0; i < _pollfds.size(); ++i)
+	{
+		std::cout << "fd: " << _pollfds[i].fd << std::endl;
 	}
 }
 
@@ -177,13 +206,17 @@ void PollManager::run()
 {
 	while (true)
 	{
+		printPollFDs();
+		std::cout << "--------------------------" << std::endl;
 		int events = poll(&_pollfds[0], _pollfds.size(), -1);
+		printPollFDs();
 		if (events > 0)
 		{
 			for (size_t i = 0; i < _pollfds.size(); ++i)
 			{
 				if (_pollfds[i].revents & POLLIN)
 				{
+					std::cout << "PollManager: POLLIN event on fd " << _pollfds[i].fd << std::endl;
 					if (_sockets.count(_pollfds[i].fd))
 					{
 						acceptConnection(_pollfds[i].fd);
@@ -196,27 +229,30 @@ void PollManager::run()
 						}
 						catch(const std::exception& e)
 						{
-							std::cout << "client removed" << std::endl;
 							removeClient(_pollfds[i].fd);
 						}
 					}
 				}
 				if (_pollfds[i].revents & POLLOUT)
 				{
+					std::cout << "PollManager: POLLOUT event on fd " << _pollfds[i].fd << std::endl;
 					if (_clients.count(_pollfds[i].fd))
 					{
+
 						Client& client = *_clients[_pollfds[i].fd];
 						if (_pollfds[i].fd == client.getFd())
 						{
 							client.sendResponse();
 							if (client.getResponseComplete())
 							{
+								std::cout << "PollManager: Response complete for fd " << _pollfds[i].fd << std::endl;
 								unregisterForWrite(_pollfds[i].fd);
 								client.reset();
 							}
 						}
 						else
 						{
+							std::cout << "PollManager: POLLOUT event on CGI fd " << _pollfds[i].fd << std::endl;
 							client.cgiWrite();
 						}
 						
